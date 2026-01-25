@@ -1,0 +1,93 @@
+[project]
+name = "chriscarl.tools.academia"
+version = "0.0.0"
+description = "Since I enrolled in SJSU in 2025F as an MS CMPE student, I have found need for lots of tools like C/C++ compilation and test, Markdown to LaTeX, and others. This project will serve to bundle all of those."
+authors = [{name = "Chris Carl", email = "chrisbcarl@outlook.com"}]
+readme = "README.md"
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python",
+    "Development Status :: 2 - Pre-Alpha",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+requires-python = ">=3.12,<3.14"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.chriscarl]
+codeword = 'chaos'
+created = '2024-11-21 17:22:00'
+modified = '2024-11-21 17:22:00'
+
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__"
+]
+ignore = ["ignoreme"]
+stubPath = "dist/stubs"
+# defineConstant = { DEBUG = true }
+reportAttributeAccessIssue = false  # ._MEIPASS
+
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+addopts = [
+    # https://docs.pytest.org/en/latest/explanation/goodpractices.html#test-discovery
+    # https://docs.pytest.org/en/latest/explanation/goodpractices.html#which-import-mode
+    # allows you to have 2 test file names that are exaclty the same like a/test_lib.py and b/test_lib.py
+    "--import-mode=importlib",
+]
+
+
+[tool.mypy]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/dist/typing"
+
+
+[[tool.mypy.overrides]]
+module = [
+    'parameterized',
+]
+ignore_missing_imports = true
+
+
+[tool.poetry]
+repository = "https://github.com/chrisbcarl/chriscarl.tools.academia"
+package-mode = true
+packages = [
+    # https://python-poetry.org/docs/pyproject/#packages
+    {include = "chriscarl", from = "src"}
+]
+include = [
+    { path = "tests", format = "sdist" },
+    # it seems to include all files that are in the packages include section without the need to specify
+]
+
+
+[tool.poetry.urls]
+changelog = "https://github.com/chrisbcarl/chriscarl.tools.academia/blob/main/CHANGELOG.md"
+homepage = "https://chriscarl.com"
+# documentation = "https://readthedocs.org"
+# "bug tracker" = "https://github.com/me/spam/issues"
+
+
+[tool.poetry.scripts]
+# dev = 'chriscarl.tools.dev:main'
+
+
+# poetry add package
+[tool.poetry.dependencies]
+chriscarl = {develop = true, path="../chriscarl.python"}  # version = ">0.0.0"
+
+
+[tool.poetry.group.dev.dependencies]  # poetry add package --group dev
+mypy = "^1.13.0"
+pytest-cov = "^7.0.0"
