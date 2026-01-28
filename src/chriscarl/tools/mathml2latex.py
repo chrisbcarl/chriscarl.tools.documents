@@ -9,7 +9,9 @@ Description:
 tools.mathml2latex is a tool which takes MathML crap and turns it into LaTeX.
 
 Examples:
-    $ mathml2latex tests/collateral/mathml2latex/mathml.xml
+    - make a file /temp/mathml.xml
+    - Right Click > Copy to Clipboard > "MathML Code"
+    $ mathml2latex /temp/mathml.xml
 
 Updates:
     2026-01-28 - tools.mathml2latex - initial commit
