@@ -32,7 +32,11 @@ from argparse import ArgumentParser
 import re
 
 # third party imports
-from mathml_to_latex.converter import MathMLToLaTeX  # mathml-to-latex
+try:
+    from mathml_to_latex.converter import MathMLToLaTeX
+except ImportError:
+    print('pip install mathml-to-latex', file=sys.stderr)
+    sys.exit(1)
 
 # project imports
 from chriscarl.core.constants import TEMP_DIRPATH

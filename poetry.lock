@@ -542,18 +542,6 @@ html5 = ["html5lib"]
 htmlsoup = ["BeautifulSoup4"]
 
 [[package]]
-name = "mathml-to-latex"
-version = "1.0.0"
-description = "It converts MathML to LaTeX"
-optional = false
-python-versions = ">=3.6"
-groups = ["main"]
-files = [
-    {file = "mathml_to_latex-1.0.0-py3-none-any.whl", hash = "sha256:a85ec2434da774be019ed5ea32494616baabf48471b054e3567a7700ae759572"},
-    {file = "mathml_to_latex-1.0.0.tar.gz", hash = "sha256:ba6a438526684940572d1875b4d5f2d6cb3bea52943830307d08a9fc662e4f69"},
-]
-
-[[package]]
 name = "mypy"
 version = "1.19.1"
 description = "Optional static typing for Python"
@@ -1102,4 +1090,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.14"
-content-hash = "087cc22e5d627d0e99b512c19d5171d22448d690409d6942782d57bf63dd9bf0"
+content-hash = "625f8203bf5c780fd0cc3c8b96d4038a9dbda4142a49d8061d718426ea5ec68b"
