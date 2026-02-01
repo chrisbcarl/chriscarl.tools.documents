@@ -22,9 +22,10 @@ python -m pytest --cov=chriscarl.tools tests --cov-report term-missing
 ```bash
 project new chriscarl.tools.documents "tools.documents shall serve for common situations like html2md, md2latex, and others like that." --dirpath ~/src --type python --module-type
 
-dev create tools.documents --tool
+dev create tools.documents --tool --namespace
 dev create tools.shed.documents --namespace
 dev create core.lib.third.spellchecker --namespace
-dev create tools.md2bibtex --tool
+dev create tools.md2bibtex --tool --namespace
+dev create tools.html2md --tool --namespace
 dev create tools.shed.md2bibtex --namespace
 ```
