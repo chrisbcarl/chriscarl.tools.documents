@@ -6,9 +6,14 @@ Email:          chrisbcarl@outlook.com
 Date:           2026-01-25
 Description:
 
-tools.md2latex is a tool which... TODO: lorem ipsum
+tools.md2latex is a tool which converts Markdown to LaTeX WITH a Markdown bibliography!
+I've found throughout 3 semesters of grad school that working in Markdown is the obvious choice
+    but citations are a pain in the ass and research collation is a pain in the ass
+    so my current solution is the following:
+    markdown essay file + markdown/bibtex "research" file with certain -isms that lock the 2 together.
 
 Updates:
+    2026-01-29 - tools.md2latex - got a hankerin to at least start getting the outlines done
     2026-01-25 - tools.md2latex - initial commit
 '''
 
@@ -20,6 +25,7 @@ import logging
 from typing import List, Generator, Optional
 from dataclasses import dataclass, field
 from argparse import ArgumentParser
+import json
 
 # third party imports
 
@@ -28,7 +34,10 @@ from chriscarl.core.constants import TEMP_DIRPATH
 from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, make_dirpath
-from chriscarl.tools.shed.md2latex import assert_executables_exist
+from chriscarl.core.lib.stdlib.io import read_text_file_try
+from chriscarl.tools.shed import md2latex
+from chriscarl.tools.shed import md2bibtex
+import chriscarl.files.manifest_academia as ma
 
 SCRIPT_RELPATH = 'chriscarl/tools/md2latex.py'
 if not hasattr(sys, '_MEIPASS'):
@@ -47,6 +56,12 @@ DEFAULT_OUTPUT_DIRPATH = abspath(TEMP_DIRPATH, 'tools.md2latex')
 DEFAULT_LOG_FILEPATH = abspath(TEMP_DIRPATH, 'tools.md2latex.log')
 
 # tool constants
+TEMPLATES = {
+    'default': ma.FILEPATH_MD2LATEX_DEFAULT_TEMPLATE,
+    'chicago': ma.FILEPATH_MD2LATEX_CHICAGO_TEMPLATE,
+    'ieee': ma.FILEPATH_MD2LATEX_IEEE_TEMPLATE,
+}
+DEFAULT_TEMPLATE = list(TEMPLATES)[0]
 
 
 @dataclass
@@ -54,12 +69,16 @@ class Arguments:
     '''
     Document this class with any specifics for the process function.
     '''
-    n: int
-    debug: bool
-    times: int
-    init: List[int] = field(default_factory=lambda: DEFAULT_FIB_INIT)
-    output_dirpath: str = DEFAULT_OUTPUT_DIRPATH
-    messages: List[str] = field(default_factory=lambda: [])
+    markdown_filepath: str
+    bibliography: Optional[str] = None
+    output_dirpath: Optional[str] = None
+    template: str = DEFAULT_TEMPLATE
+    spellcheck_fatal: bool = False
+    skip_spellcheck: bool = False
+    # wc-applet
+    word_count: bool = False
+    # non-app
+    debug: bool = False
     log_level: str = 'INFO'
     log_filepath: str = DEFAULT_LOG_FILEPATH
 
@@ -67,21 +86,26 @@ class Arguments:
     def argparser():
         # type: () -> ArgumentParser
         parser = ArgumentParser(prog=SCRIPT_NAME, description=__doc__, formatter_class=ArgparseNiceFormat)
-        app = parser.add_argument_group('app')
-        app.add_argument('n', type=int, help='the -th term of fib you want')
-        app.add_argument('--times', '-t', type=lambda x: int(x, base=0), required=True, help='print how many times? any numerical format is ok')
-        app.add_argument('--init', type=int, nargs=2, default=DEFAULT_FIB_INIT, help='assume sequence starts with these 2 numbers')
+        app = parser.add_argument_group('main applet')
+        app.add_argument('markdown_filepath', type=str, help='.md?')
+        app.add_argument('--bibliography', '-b', type=str, help='.md w/ bibtex?')
+        app.add_argument('--output-dirpath', '-o', type=str, help='save outputs to different dir than input?')
+        app.add_argument('--template', '-t', type=str, default=DEFAULT_TEMPLATE, choices=TEMPLATES, help='document style, really')
+        app.add_argument('--spellcheck-fatal', '-sf', action='store_true', help='spellcheck fail is fatal')
+        app.add_argument('--skip-spellcheck', '-ss', action='store_true', help='skip-spellcheck entirely')
+
+        wc = parser.add_argument_group('word-count applet')
+        wc.add_argument('--word-count', '-wc', action='store_true', help='get the word count, exit')
 
         misc = parser.add_argument_group('misc')
         misc.add_argument('--debug', action='store_true', help='chose to print debug info')
-        misc.add_argument('--output-dirpath', '-o', type=str, default=DEFAULT_OUTPUT_DIRPATH, help='where do you want to save a text of the sequence')
-        misc.add_argument('--messages', '-m', type=str, nargs='*', default=[], help='messages youd like to have printed')
         misc.add_argument('--log-level', type=str, default='INFO', choices=NAME_TO_LEVEL, help='log level?')
         misc.add_argument('--log-filepath', type=str, default=DEFAULT_LOG_FILEPATH, help='log filepath?')
         return parser
 
     def process(self):
-        make_dirpath(self.output_dirpath)
+        if self.output_dirpath:
+            make_dirpath(self.output_dirpath)
         if self.debug:
             self.log_level = 'DEBUG'
         configure_ez(level=self.log_level, filepath=self.log_filepath)
@@ -104,8 +128,22 @@ def main():
         sys.exit(1)
 
     args = Arguments.parse(parser=parser)
-    assert_executables_exist()
-    print('exist')
+    md2latex.assert_executables_exist()
+
+    md_content = read_text_file_try(args.markdown_filepath)
+    if not md_content.endswith('\n'):
+        md_content = f'{md_content}\n'
+
+    word_count = md2latex.word_count(md_content)
+    LOGGER.info('wc: %d', word_count)
+    if args.word_count:
+        return 0
+
+    bibtex_content, bibtex_labels = '', {}
+    if args.bibliography:
+        bibtex_content, bibtex_labels = md2bibtex.text_to_bibtex(args.bibliography)
+        if args.debug:
+            LOGGER.debug('bibtex labels: %s', json.dumps(bibtex_labels))
 
     return 0
 

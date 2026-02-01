@@ -1,0 +1,139 @@
+% https://www.overleaf.com/latex/templates/ieee-conference-template/grfzhhncsfqn
+\documentclass[conference]{IEEEtran}
+% \documentclass{article}
+% \documentclass{book}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{tabularx,booktabs}
+% use l for left aligned columns
+% defined centered version of "X" column type:
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+% defined right version of "X" column type: (copilot ai-gen)
+\newcolumntype{R}{>{\raggedleft\arraybackslash}X}
+\usepackage{textcomp}
+\usepackage{xcolor}
+% https://tex.stackexchange.com/a/116572
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+%   frame=single,
+  breaklines=true,
+%   postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},  % makes literal red arrrow newlines...
+}
+% \usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+
+% https://tex.stackexchange.com/a/305413
+\usepackage{lipsum} % filler text
+\setlength{\extrarowheight}{1pt} % for a bit more open "look"
+
+
+% \usepackage[pass, letterpaper]{geometry}
+% \usepackage{geometry}
+% \geometry{<GEOMETRY>}
+
+
+% \usepackage{setspace}
+% \doublespacing
+<DOUBLESPACING>
+
+
+\title{<TITLE>}
+\date{<DATE>}  % \today
+
+
+\author{
+    % \IEEEauthorblockN{Chris Carl}
+    % \IEEEauthorblockA{
+    %     \textit{San Jose State University} \\
+    %     \textit{Masters of Science in Computer Engineering Student}\\
+    %     San Jose, USA \\
+    %     chris.carl@sjsu.edu
+    % }
+<AUTHORS>
+}
+
+
+\begin{document}
+
+
+\maketitle
+% https://tex.stackexchange.com/a/398266
+\thispagestyle{plain}
+\pagestyle{plain}
+% \thispagestyle{empty} %--to make title page number less
+% \pagestyle{empty}     %--to make other pages number less.
+
+
+\begin{abstract}
+<ABSTRACT>
+\end{abstract}
+
+
+\begin{IEEEkeywords}
+<KEYWORDS>
+\end{IEEEkeywords}
+
+
+<BODY>
+
+% % https://tex.stackexchange.com/a/305413
+% \begin{table*}
+% \caption{Double Column}
+% \label{tabl2}
+% \begin{tabularx}{\textwidth}{@{} l *{10}{X} c @{}}  % this gets me more of what I want...
+% \begin{tabularx}{\textwidth}{@{} l *{10}{C} c @{}}
+% \toprule
+% labels
+% & airplane & automobile & bird & cat & deer
+% & dog & frog & horse & ship & truck & accuracy \\
+% \midrule
+% airplane   & 915      & 4          & 17   & 19  & 3    & 1   & 0    & 2     & 27   & 12    & 91.50\%  \\
+% automobile & 8        & 934        & 3    & 4   & 0    & 0   & 3    & 0     & 10   & 38    & 93.40\%  \\
+% \addlinespace
+% dog        & 4        & 0          & 37   & 106 & 23   & 792 & 9    & 26    & 2    & 1     & 79.20\%  \\
+% frog       & 2        & 5          & 19   & 35  & 1    & 20  & 912  & 2     & 3    & 1     & 91.20\%  \\
+% \bottomrule
+% \end{tabularx}
+% \end{table*}
+
+
+% \begin{table}
+% \small
+% \caption{Single Column}
+% \label{tabl2}
+% \begin{tabularx}{\linewidth}{p{1.75cm}>{\raggedright\arraybackslash}Xl}
+% \toprule
+% Simulation   & Description                                              & Language \\
+% \midrule
+% Markov Chain:            & Simultaneous and ergodic simulations of Markov chains, to understand implementation.                                       & Python \\
+% Multiarm bandit problem: & In order to compare greedy epsilon at different hyper-parameters \textbackslash{}varepsilon and optimistic value approach. & Python \\
+% Tic-tac-toe: & Implemented in R, to illustrate learning from a data-set & R        \\
+% Tic-tac-toe: & Implemented in Python.                                   & Python   \\
+% Grid World:  & Implemented in R.                                        & R        \\
+% Grid world:  & Implemented in Python.                                   & Python   \\
+% AI gym:      & Discrete Cart-pole AI gym.                               & Python
+% \end{tabularx}%
+% \end{table}
+
+
+% \begin{figure}[htbp]
+%     \centerline{\includegraphics[width=\linewidth]{../Layout-dimensions.png}}
+%     \caption{Example of a figure caption.}
+%     \label{fig:whatever}
+% \end{figure}
+
+
+\bibliographystyle{IEEEtran}
+% \bibliography{refs2}
+<BIBLIOGRAPHY>
+
+
+<APPENDIX>
+
+
+\end{document}

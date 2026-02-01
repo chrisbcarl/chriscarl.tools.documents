@@ -10,6 +10,7 @@ tools.shed.md2bibtex is functions used by the tool that belong in the shed.
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-01-29 - tools.shed.md2bibtex - docs
     2026-01-25 - tools.shed.md2bibtex - initial commit
 '''
 
@@ -44,14 +45,16 @@ LOGGER.addHandler(logging.NullHandler())
 def text_to_bibtex(text):
     # type: (str) -> Tuple[str, Dict[str, str]]
     '''
-    # clean the bibliography
-        bibliography = read bibliography
-        bibtex content = extract bibtex content
-        bib-labels = extract all keys
-        clean the bibtex content so that it will render correctly
-        if any cleaning occurred, copy a new bibfile
-        else, use current bibfile
-        TODO: test that it renders correctly by doing a dummy documenet
+    Description:
+        Given any text file, extract all of the bibtex from it.
+        Get back a clean bibtex and the labels in the bibtex.
+    Arguments:
+        text: str
+            filepath or text content
+    Returns:
+        Tuple[str, Dict[str, str]]
+            str - bibtex-only content
+            Dict[str, str] - {label: citation-type}
     '''
     if is_file(text):
         text = read_text_file_try(text)

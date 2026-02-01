@@ -1,0 +1,121 @@
+% Based on: https://www.overleaf.com/latex/templates/turabian-formatted-thesis-slash-dissertation/qkyvdqrsgmnf
+%
+
+\documentclass[12pt]{article}
+% \documentclass{report}
+% \documentclass{book}
+
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes, ellipsis}
+\usepackage{graphicx}
+\usepackage{tabularx,booktabs}
+% use l for left aligned columns
+% defined centered version of "X" column type:
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+% defined right version of "X" column type: (copilot ai-gen)
+\newcolumntype{R}{>{\raggedleft\arraybackslash}X}
+\usepackage{amsmath,amssymb,amsfonts}
+% https://tex.stackexchange.com/a/116572
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+%   frame=single,
+  breaklines=true,
+%   postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},  % makes literal red arrrow newlines...
+}
+
+
+% \usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
+% \usepackage{url}
+
+% https://tex.stackexchange.com/a/305413
+\usepackage{lipsum} % filler text
+
+% \usepackage[pass, letterpaper]{geometry}
+\usepackage{geometry}
+\geometry{<GEOMETRY>}
+% \geometry{legalpaper, landscape, margin=2in}
+
+
+\newcommand {\coursetitle }[1]{
+    \begin{center}
+    {\normalsize {#1}}  % \normalsize \textbf {#1}
+    \end{center}
+}
+
+
+\usepackage{biblatex-chicago}
+% https://tex.stackexchange.com/a/169793
+% combine with {hyperref} package + re.sub(r'_', '\\_', bib_content) into some temporary fixed .bib file instead
+\DeclareSourcemap{
+    \maps[datatype=bibtex]{
+        \map{
+            \step[fieldsource=url,
+            match=\regexp{\\_},
+            replace=\regexp{_}]
+        }
+    }
+}
+% \addbibresource{references.bib}
+<ADDBIBRESOURCE>
+
+
+% \usepackage{setspace}
+% \doublespacing
+<DOUBLESPACING>
+
+
+\usepackage[affil-it]{authblk}
+
+
+\title{<TITLE>}
+\date{<DATE>}  % \today
+% \author{John C. Neu
+%     \thanks{Electronic address: \texttt{neu@math.berkeley.edu}}
+% }
+% \affil{Department of Mathematics, University of California, Berkeley}
+<AUTHORS>
+
+
+\begin{document}
+
+
+\maketitle
+\coursetitle{<COURSE>}
+
+
+% \clearpage
+% \tableofcontents
+<TABLEOFCONTENTS>
+
+
+\clearpage
+
+
+<BODY>
+
+
+% \begin{figure}[htbp]
+%     \centerline{\includegraphics[width=\linewidth]{../Layout-dimensions.png}}
+%     \caption{Example of a figure caption.}
+%     \label{fig:whatever}
+% \end{figure}
+
+
+\clearpage
+\printbibliography
+
+
+<APPENDIX>
+
+
+\end{document}

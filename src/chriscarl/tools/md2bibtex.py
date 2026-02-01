@@ -28,7 +28,7 @@ from chriscarl.core.constants import TEMP_DIRPATH
 from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, filename
-import chriscarl.tools.shed.md2bibtex as lib
+from chriscarl.tools.shed import md2bibtex
 from chriscarl.core.lib.stdlib.io import write_text_file
 
 SCRIPT_RELPATH = 'chriscarl/tools/md2bibtex.py'
@@ -107,7 +107,7 @@ def main():
         output_filepath = abspath(args.output_dirpath, f'{filename(args.input_filepath)}.bib')
 
     try:
-        bibtex, labels = lib.text_to_bibtex(args.input_filepath)
+        bibtex, labels = md2bibtex.text_to_bibtex(args.input_filepath)
     except Exception as ex:
         LOGGER.error('%s', ex)
         LOGGER.debug('%s', ex, exc_info=True)

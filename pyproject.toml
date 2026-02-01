@@ -82,6 +82,7 @@ homepage = "https://chriscarl.com"
 [tool.poetry.scripts]
 md2bibtex = 'chriscarl.tools.md2bibtex:main'
 mathml2latex = 'chriscarl.tools.mathml2latex:main'
+md2latex = 'chriscarl.tools.md2latex:main'
 
 
 # poetry add package
