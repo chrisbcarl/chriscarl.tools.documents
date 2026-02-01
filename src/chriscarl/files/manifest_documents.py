@@ -6,12 +6,12 @@ Email:          chrisbcarl@outlook.com
 Date:           2026-01-25
 Description:
 
-files.manifest_academia is literally what it says on the tin
+files.manifest_documents is literally what it says on the tin
 files are modules that elevate files so they can be used in python, either registering the path name or actually interacting with them like data cabinets.
 
 Updates:
-    2026-01-29 - files.manifest_academia - md2latex
-    2026-01-25 - files.manifest_academia - initial commit
+    2026-01-29 - files.manifest_documents - md2latex
+    2026-01-25 - files.manifest_documents - initial commit
 '''
 
 # stdlib imports
@@ -24,7 +24,7 @@ import logging
 
 # project imports
 
-SCRIPT_RELPATH = 'chriscarl/files/manifest_academia.py'
+SCRIPT_RELPATH = 'chriscarl/files/manifest_documents.py'
 if not hasattr(sys, '_MEIPASS'):
     SCRIPT_FILEPATH = os.path.abspath(__file__)
 else:
@@ -39,7 +39,7 @@ LOGGER.addHandler(logging.NullHandler())
 
 # ./
 DIRPATH_ROOT = SCRIPT_DIRPATH
-FILEPATH_MANIFEST_ACADEMIA_PY = os.path.join(DIRPATH_ROOT, 'manifest_academia.py')
+FILEPATH_MANIFEST_ACADEMIA_PY = os.path.join(DIRPATH_ROOT, 'manifest_documents.py')
 
 # ./spellchecker
 DIRPATH_SPELLCHECKER = os.path.join(SCRIPT_DIRPATH, './spellchecker')

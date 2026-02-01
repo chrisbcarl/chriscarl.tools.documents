@@ -44,7 +44,7 @@ from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, dirpath, as_posix
 from chriscarl.core.lib.stdlib.io import read_text_file, write_text_file
-import chriscarl.files.manifest_academia as ma
+import chriscarl.files.manifest_documents as mand
 from chriscarl.core.lib.stdlib.subprocess import run
 
 SCRIPT_RELPATH = 'chriscarl/tools/mathml2latex.py'
@@ -135,7 +135,7 @@ def main():
         latexes.append(latex)
 
     if args.output_filepath != DEFAULT_OUTPUT_FILEPATH:
-        template = read_text_file(ma.FILEPATH_MATHML2LATEX_TEMPLATE)
+        template = read_text_file(mand.FILEPATH_MATHML2LATEX_TEMPLATE)
         print(type(template))
         output_dirpath = dirpath(args.output_filepath)
         filename = os.path.splitext(args.output_filepath)[0]

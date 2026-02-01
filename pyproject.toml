@@ -1,5 +1,5 @@
 [project]
-name = "chriscarl.tools.academia"
+name = "chriscarl.tools.documents"
 version = "0.0.0"
 description = "Since I enrolled in SJSU in 2025F as an MS CMPE student, I have found need for lots of tools like C/C++ compilation and test, Markdown to LaTeX, and others. This project will serve to bundle all of those."
 authors = [{name = "Chris Carl", email = "chrisbcarl@outlook.com"}]
@@ -60,7 +60,7 @@ ignore_missing_imports = true
 
 
 [tool.poetry]
-repository = "https://github.com/chrisbcarl/chriscarl.tools.academia"
+repository = "https://github.com/chrisbcarl/chriscarl.tools.documents"
 package-mode = true
 packages = [
     # https://python-poetry.org/docs/pyproject/#packages
@@ -73,7 +73,7 @@ include = [
 
 
 [tool.poetry.urls]
-changelog = "https://github.com/chrisbcarl/chriscarl.tools.academia/blob/main/CHANGELOG.md"
+changelog = "https://github.com/chrisbcarl/chriscarl.tools.documents/blob/main/CHANGELOG.md"
 homepage = "https://chriscarl.com"
 # documentation = "https://readthedocs.org"
 # "bug tracker" = "https://github.com/me/spam/issues"

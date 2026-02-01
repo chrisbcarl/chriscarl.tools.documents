@@ -25,7 +25,7 @@ import spellchecker
 
 # project imports
 from chriscarl.core.lib.stdlib.io import read_text_file
-from chriscarl.files import manifest_academia
+from chriscarl.files import manifest_documents
 
 SCRIPT_RELPATH = 'chriscarl/core/lib/third/spellchecker.py'
 if not hasattr(sys, '_MEIPASS'):
@@ -49,10 +49,10 @@ def load_dictionary():
     # type: () -> None
     if NON_WORDS:
         return
-    NON_WORDS.update(set(ele for ele in read_text_file(manifest_academia.FILEPATH_NON_WORDS).splitlines() if ele and not ele.startswith('#')))
-    DICTIONARY.update(set(ele for ele in read_text_file(manifest_academia.FILEPATH_DICTIONARY).splitlines() if ele and not ele.startswith('#')))
-    ACRONYMS.update(set(ele for ele in read_text_file(manifest_academia.FILEPATH_ACRONYMS).splitlines() if ele and not ele.startswith('#')))
-    NAMES.update(set(ele for ele in read_text_file(manifest_academia.FILEPATH_NAMES).splitlines() if ele and not ele.startswith('#')))
+    NON_WORDS.update(set(ele for ele in read_text_file(manifest_documents.FILEPATH_NON_WORDS).splitlines() if ele and not ele.startswith('#')))
+    DICTIONARY.update(set(ele for ele in read_text_file(manifest_documents.FILEPATH_DICTIONARY).splitlines() if ele and not ele.startswith('#')))
+    ACRONYMS.update(set(ele for ele in read_text_file(manifest_documents.FILEPATH_ACRONYMS).splitlines() if ele and not ele.startswith('#')))
+    NAMES.update(set(ele for ele in read_text_file(manifest_documents.FILEPATH_NAMES).splitlines() if ele and not ele.startswith('#')))
     for acronym in list(ACRONYMS):
         if acronym[-1] == 's':
             ACRONYMS.add(f"{acronym}'")

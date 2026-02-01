@@ -37,7 +37,7 @@ from chriscarl.core.lib.stdlib.os import abspath, make_dirpath
 from chriscarl.core.lib.stdlib.io import read_text_file_try
 from chriscarl.tools.shed import md2latex
 from chriscarl.tools.shed import md2bibtex
-import chriscarl.files.manifest_academia as ma
+import chriscarl.files.manifest_documents as mand
 
 SCRIPT_RELPATH = 'chriscarl/tools/md2latex.py'
 if not hasattr(sys, '_MEIPASS'):
@@ -57,9 +57,9 @@ DEFAULT_LOG_FILEPATH = abspath(TEMP_DIRPATH, 'tools.md2latex.log')
 
 # tool constants
 TEMPLATES = {
-    'default': ma.FILEPATH_MD2LATEX_DEFAULT_TEMPLATE,
-    'chicago': ma.FILEPATH_MD2LATEX_CHICAGO_TEMPLATE,
-    'ieee': ma.FILEPATH_MD2LATEX_IEEE_TEMPLATE,
+    'default': mand.FILEPATH_MD2LATEX_DEFAULT_TEMPLATE,
+    'chicago': mand.FILEPATH_MD2LATEX_CHICAGO_TEMPLATE,
+    'ieee': mand.FILEPATH_MD2LATEX_IEEE_TEMPLATE,
 }
 DEFAULT_TEMPLATE = list(TEMPLATES)[0]
 

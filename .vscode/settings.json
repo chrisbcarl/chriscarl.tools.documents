@@ -54,7 +54,7 @@
     // NOTE: UTTERLY FUCKING USELESS
     // https://github.com/microsoft/vscode-python/wiki/Setting-descriptions#pythondefaultinterpreterpath
     // If the venv doesnt exist before vscode FIRST boots up, it will never "attach", and an internal storage is used so you HAVE to gui it. its so fucking stupid
-    "python.defaultInterpreterPath": "C:\\Users\\chris\\src\\chriscarl.tools.academia\\.venv (Activated)\\scripts\\python.exe",
+    "python.defaultInterpreterPath": "C:\\Users\\chris\\src\\chriscarl.tools.documents\\.venv (Activated)\\scripts\\python.exe",
     "python.terminal.activateEnvironment": true,
     "python.useEnvironmentsExtension": false,
     "[python]": {
