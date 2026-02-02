@@ -24,6 +24,7 @@ Examples:
         -ss  # skip spellcheck
 
 TODO:
+    - md2pdf vs md2latex, NOT THE SAME
     - default template doesnt work, figure something out import-wise...
     - refactor
 

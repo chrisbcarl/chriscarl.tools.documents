@@ -83,6 +83,7 @@ homepage = "https://chriscarl.com"
 md2bibtex = 'chriscarl.tools.md2bibtex:main'
 mathml2latex = 'chriscarl.tools.mathml2latex:main'
 md2latex = 'chriscarl.tools.md2latex:main'
+md2pdf = 'chriscarl.tools.md2latex:main'
 html2md = 'chriscarl.tools.html2md:main'
 
 
