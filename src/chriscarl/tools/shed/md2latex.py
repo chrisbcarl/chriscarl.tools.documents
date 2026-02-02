@@ -9,7 +9,11 @@ Description:
 tools.shed.md2latex is individual funcs that support the larger tool that COULD be used independently
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
+TODO:
+    test and refactor
+
 Updates:
+    2026-02-01 - tools.shed.md2latex - added analyze_sections, markdown_emphasis_to_latex, markdown_list_to_latex, delete_latex_work_files
     2026-01-31 - tools.shed.md2latex - added get_word_count, word_count
     2026-01-25 - tools.shed.md2latex - initial commit
 '''
@@ -21,8 +25,10 @@ import sys
 import logging
 import re
 import string
+from typing import Tuple, List, Optional, Dict
 
 # third party imports
+import markdown2
 
 # project imports
 from chriscarl.core.lib.stdlib.os import is_file
@@ -51,34 +57,66 @@ def assert_executables_exist():
     for exe in EXECUTABLES:
         assert which(exe), f'choco install {exe} -y' if WIN32 else 'apt install {} -y'
 
-REGEX_MARKDOWN_YAML = re.compile(r'---\n(.*?)\n---', flags=re.DOTALL | re.MULTILINE)
+# BIG sections of markdown potentially
+REGEX_CAPTION_LABEL_COMMON = re.compile(r'(?P<caption>(?:caption: *)[^\n]+(?:\n+))?(?P<label>(?:label: *)[^\n]+(?:\n+))?', flags=re.DOTALL | re.MULTILINE)
 REGEX_HTML_COMMENT = re.compile(r'\<\!--(.*?)--\>', flags=re.DOTALL | re.MULTILINE)
+REGEX_MARKDOWN_YAML = re.compile(r'---\n(.*?)\n---', flags=re.DOTALL | re.MULTILINE)
+REGEX_MARKDOWN_TABLE = re.compile(r'(?:caption: *)?(?P<caption>[^\n]+)?\n+?(?:label: *)?(?P<label>[^\n]+)?\n+?\|(?P<content>.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
+REGEX_MARKDOWN_LATEX = re.compile(r'\$\$\n(%\\label\{)?(?P<label>[A-Za-z0-9\-_\.]+)?(\}\n)?(?P<content>.*?)\$\$', flags=re.DOTALL | re.MULTILINE)
+REGEX_MARKDOWN_MULTILINE_LITERAL = re.compile(r'```\n(?P<content>.*?)```', flags=re.DOTALL | re.MULTILINE)
+REGEX_MARKDOWN_CODE = re.compile(r'(?:caption: *)?(?P<caption>[^\n]+)?\n+?(?:label: *)?(?P<label>[^\n]+)?\n+?```(?P<language>[a-z\-\+\# ]+?)\n(?P<content>.*?)```', flags=re.DOTALL | re.MULTILINE)
+# NOTE: THIS ONE IS WEIRD, doing groups[content] will only give you the last quote, but it DOES pick all of them up...
+REGEX_MARKDOWN_QUOTE = re.compile(r'(?P<caption>(?:caption: *)[^\n]+(?:\n+))?(?P<label>(?:label: *)[^\n]+(?:\n+))?(?P<content>^>.*\n){2,}', flags=re.MULTILINE)
+# NOTE: special unfortunately...
+REGEX_MARKDOWN_LIST = re.compile(r'(?:[ \t\n]*(?:[\d+]\.|[-\*]+)\s*(?:.+)\n){2,}', flags=re.MULTILINE)
 
-REGEX_CITATION = re.compile(r'<(?P<key>[^>\n]+)>')
+REGEX_LARGE_SECTIONS = {
+    'comment': REGEX_HTML_COMMENT,
+    'yaml': REGEX_MARKDOWN_YAML,
+    # can have other stuff embedded
+    'table': REGEX_MARKDOWN_TABLE,
+    'latex': REGEX_MARKDOWN_LATEX,
+    'literal': REGEX_MARKDOWN_MULTILINE_LITERAL,
+    'code': REGEX_MARKDOWN_CODE,
+    'quote': REGEX_MARKDOWN_QUOTE,
+    'list': REGEX_MARKDOWN_LIST,
+    # implicit ('any': '')
+}
+
+REGEX_MARKDOWN_HEADER = re.compile(r'(?P<octothorps>#+) (?P<title>.+)')
+REGEX_MARKDOWN_IMG = re.compile(r'!\[(?P<alt>.*?)\]\((?P<path>.*?\))')
+
+REGEX_SMALL_SECTIONS = {
+    'header': REGEX_MARKDOWN_HEADER,
+    'img': REGEX_MARKDOWN_IMG,
+}
+
+# https://www.freecodecamp.org/news/how-to-write-a-regular-expression-for-a-url/
+REGEX_URL = re.compile(r'(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?')
+# REGEX_URL = re.compile(r'(https?:\/\/)[a-z0-9\-\_\.]{3,}\/?[A-Za-z0-9\-\_\.\/\?\=\&]*')
+REGEX_MARKDOWN_URL = re.compile(r'\[(?P<alt>.*?)\]\((?P<path>.*?\))')
+REGEX_MARKDOWN_LITERAL_INLINE = re.compile(r'`(?P<content>[^`]+)`')
+REGEX_MARKDOWN_LATEX_INLINE = re.compile(r'(?:(?!\$\d[\d\.\,]+ \b))\$(?P<content>.+?)\$')  # , flags=re.DOTALL
+
+
+
+REGEX_CITATION = re.compile(r'<(?P<ref>[^>\n]+)>')
 REGEX_CITATION_WRONG = re.compile(r'\[([^\]]+)\]')
-REGEX_CITATION_PAGE = re.compile(r'<(?P<key>[A-Za-z0-9\-_\.]+)(,\s+)?(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)?>')
+REGEX_CITATION_PAGE = re.compile(r'<(?P<ref>[A-Za-z0-9\-_\.]+)(,\s+)?(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)?>')
 REGEX_CITATION_FULL = re.compile(
     # [du-bois, Chapter 4, s08]deleting previous work files
-    r'<(?P<key>[A-Za-z0-9\-_\.]+)(,\s+)(?P<chapter>[A-Za-z0-9\-_\. ]+)(,\s+)(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)>'
+    r'<(?P<ref>[A-Za-z0-9\-_\.]+)(,\s+)(?P<chapter>[A-Za-z0-9\-_\. ]+)(,\s+)(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)>'
 )
 REGEX_CITATION_INTERDOC_EQ = re.compile(r'(?P<pref>Eq\s*)?<eq-(?P<ref>[A-Za-z0-9\-_\.]+)>')
 REGEX_CITATION_INTERDOC_TBL = re.compile(r'(?P<pref>Table\s*)?<tbl-(?P<ref>[A-Za-z0-9\-_\.]+)>')
 REGEX_CITATION_INTERDOC_CODE = re.compile(r'(?P<pref>Listing\s*)?<code-(?P<ref>[A-Za-z0-9\-_\.]+)>')
 REGEX_CITATION_INTERDOC_HREF = re.compile(r'(?P<pref>Section\s*|Chapter\s*)?<href-(?P<ref>[A-Za-z0-9\-_\.]+)>')
 REGEX_CITATION_INTERDOC_FIG = re.compile(r'(?P<pref>Fig\.\s*)?<fig-(?P<ref>[^>]+?)>')
-CITATION_PREFACES = ['eq', 'tbl', 'code', 'href', 'fig']
-REGEX_HEADER = re.compile(r'(?P<octothorps>#+) (?P<title>.+)')
-REGEX_MARKDOWN_IMG = re.compile(r'!\[(?P<alt>.*?)\]\((?P<path>.*?\))')
-REGEX_MARKDOWN_URL = re.compile(r'\[(?P<alt>.*?)\]\((?P<path>.*?\))')
-REGEX_MARKDOWN_INLINE_LATEX_DOUBLE = re.compile(r'\$\$(?P<content>.*?)\$\$', flags=re.DOTALL | re.MULTILINE)
-REGEX_MARKDOWN_INLINE_LATEX_SINGLE = re.compile(r'(?:(?!\$\d[\d\.\,]+ \b))\$(?P<content>.+?)\$')  # , flags=re.DOTALL
-REGEX_CODE = re.compile(r'(?:caption: *)?(?P<caption>[^\n]+)?\n?(?:ref: *)?(?P<reference>[^\n]+)?\n?```(?P<language>[a-z\-\+\# ]+?)\n(?P<content>.*?)```', flags=re.DOTALL | re.MULTILINE)
-# https://www.freecodecamp.org/news/how-to-write-a-regular-expression-for-a-url/
-REGEX_URL = re.compile(r'(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)?[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?')
 
-REGEX_MARKDOWN_TABLE_CAPT_REF = re.compile(r'\|(?P<table>.+?)\|\n\n*caption: *(?P<caption>[^\n]+)\nref: *(?P<reference>[^\n]+)\n', flags=re.DOTALL | re.MULTILINE)
-REGEX_MARKDOWN_TABLE = re.compile(r'\|(.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
-REGEX_MARKDOWN_LIST = re.compile(r'(?:[ \t]*(?:[\d+]\.|[-\*]+)\s*(?:.+)\n){2,}', flags=re.MULTILINE)
+
+
+
+# REGEX_MARKDOWN_TABLE = re.compile(r'\|(.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
 REGEX_SIC = re.compile(r'([\w])\[(sic)\]')
 
 PUNCTUATION_EXCEPT = string.punctuation.replace("'", "").replace('-', '')
@@ -86,31 +124,40 @@ REGEX_PUNCTUATION_EXCEPT = re.compile(f'[{PUNCTUATION_EXCEPT}]')
 REGEX_PUNCTUATION_HYPHEN_NON = re.compile(r'\s*?-\s+?')
 REGEX_PUNCTUATION_HYPHEN_DOUBLE = re.compile(r'-{2,}')
 
+REGEX_MARKDOWN_DOUBLE_QUOTE = re.compile(r'"(.*?)"', flags=re.MULTILINE)  # double quotes, *? is ungreedy
+REGEX_MARKDOWN_BOLD_ITALIC = re.compile(r'\*{3,}(.+?)\*{3,}', flags=re.MULTILINE)  # bold-italic, *? is ungreedy
+REGEX_MARKDOWN_BOLD = re.compile(r'\*{2,}(.+?)\*{2,}', flags=re.MULTILINE)  # bold, *? is ungreedy
+REGEX_MARKDOWN_ITALIC = re.compile(r'\*{1,}(.+?)\*{1,}', flags=re.MULTILINE)  # italics, *? is ungreedy
+# TODO: strikethrough, underline
+
 
 def get_words_only(text):
     # type: (str) -> str
     text = REGEX_SIC.sub(r'\g<1>', text)
+    for regex in REGEX_LARGE_SECTIONS.values():
+        text = regex.sub(' ', text)
+    for regex in REGEX_SMALL_SECTIONS.values():
+        text = regex.sub(' ', text)
     regexes = [
-        REGEX_MARKDOWN_YAML,
-        REGEX_HTML_COMMENT,
+        REGEX_MARKDOWN_URL,
+        REGEX_MARKDOWN_LITERAL_INLINE,
         #
         REGEX_CITATION_INTERDOC_EQ,
         REGEX_CITATION_INTERDOC_TBL,
         REGEX_CITATION_INTERDOC_HREF,
         REGEX_CITATION_INTERDOC_FIG,
-        REGEX_HEADER,
-        REGEX_MARKDOWN_IMG,
-        REGEX_MARKDOWN_URL,
-        REGEX_MARKDOWN_INLINE_LATEX_DOUBLE,
-        REGEX_MARKDOWN_INLINE_LATEX_SINGLE,
-        REGEX_CODE,
+        REGEX_MARKDOWN_LATEX_INLINE,
         #
-        REGEX_MARKDOWN_TABLE_CAPT_REF,
-        REGEX_MARKDOWN_TABLE,
+        REGEX_CITATION_WRONG,
         #
         REGEX_CITATION_FULL,
         REGEX_CITATION_PAGE,
         REGEX_CITATION,
+        #
+        REGEX_MARKDOWN_DOUBLE_QUOTE,
+        REGEX_MARKDOWN_BOLD_ITALIC,
+        REGEX_MARKDOWN_BOLD,
+        REGEX_MARKDOWN_ITALIC,
     ]
     for regex in regexes:
         text = regex.sub(' ', text)
@@ -152,3 +199,81 @@ def word_count(filepath_or_content):
     words = get_words_only(content)
     wc = get_word_count(words)
     return wc
+
+
+def analyze_sections(md_content, regex_dict):
+    # type: (str, Dict[str, re.Pattern]) -> List[Tuple[str, str, Optional[re.Match]]]
+    # find large sections then smaller sections and so on.
+    sections = [
+        # ('yaml', 'whatever', mo)
+        # ('code', 'whatever', mo)
+        # ('latex', 'whatever', mo)
+    ]
+    # these regexes define entire sections at a time and everything else in between is peanuts
+    while md_content:
+        md_content = md_content.strip()
+        mos = [(k, regex.search(md_content)) for k, regex in regex_dict.items()]
+        mos = sorted(mos, key=lambda tpl: 999999 if not tpl[1] else tpl[1].start())
+        section, first_mo = mos[0]
+        if first_mo:
+            start, end = first_mo.span()
+            if start == 0:
+                sections.append((section, md_content[:end], first_mo))
+            else:
+                sections.append(('any', md_content[:start], None))
+                sections.append((section, md_content[start:end], first_mo))
+            md_content = md_content[end:]
+        else:
+            sections.append(('any', md_content, None))
+            md_content = ''
+    return sections
+
+
+def analyze_large_sections(md_content):
+    return analyze_sections(md_content, REGEX_LARGE_SECTIONS)
+
+
+def analyze_small_sections(md_content):
+    return analyze_sections(md_content, REGEX_SMALL_SECTIONS)
+
+
+def markdown_emphasis_to_latex(text):
+    # final latexisms like quotation replacement
+    text = REGEX_MARKDOWN_DOUBLE_QUOTE.sub(r'``\1"', text)
+    text = REGEX_MARKDOWN_BOLD_ITALIC.sub(r'\\textbf{\\emph{\1}}', text)
+    text = REGEX_MARKDOWN_BOLD.sub(r'\\textbf{\1}', text)
+    text = REGEX_MARKDOWN_ITALIC.sub(r'\\emph{\1}', text)
+    return text
+
+def markdown_list_to_latex(content):
+    html = markdown2.markdown(
+        content,
+        extras={
+            'tables': None,
+            'footnotes': None,
+            'headerids': None,
+            'strike': None,
+            'middle-word-em': False,  # so urls that have MIT_technology_ wont become MIT<em>technology</em>
+        }
+    )
+    latex_list = html[:]
+    latex_list = latex_list.replace('<ol>', r'\begin{enumerate}')
+    latex_list = latex_list.replace('</ol>', r'\end{enumerate}')
+    latex_list = latex_list.replace('<ul>', r'\begin{itemize}')
+    latex_list = latex_list.replace('</ul>', r'\end{itemize}')
+    latex_list = latex_list.replace('<li>', r'\item ')
+    latex_list = latex_list.replace('</li>', r'')
+
+    return latex_list
+
+
+LATEX_EXTS_TO_CLEAN = ['.aux', '.bbl', '.bcf', '.blg', '.lof', '.log', '.lot', '.out', '.synctex(busy)', '.synctex.gz', '.run.xml', '.toc']
+
+def delete_latex_work_files(dirpath, filename, extra=None):
+    extra = extra or []
+    for ext in LATEX_EXTS_TO_CLEAN:
+        clean_me_filepath = os.path.join(dirpath, f'{filename}{ext}')
+        if os.path.isfile(clean_me_filepath):
+            os.remove(clean_me_filepath)
+    for filepath in extra:
+        os.remove(filepath)

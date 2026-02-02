@@ -36,16 +36,19 @@
             "preLaunchTask": "C/C++: g++ build active file",
         },
         {
-            "name": "[project] new",
+            "name": "[md2latex]",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/scripts/project.py",
+            "program": "${workspaceFolder}/src/chriscarl/tools/md2latex.py",
             "console": "integratedTerminal",
             "args": [
-                "new",
-                "test", "custom test description",
-                "--dirpath", "/temp"
-                // "${command:pickArgs}"
+                // "tests/collateral/md2latex/paper.md",
+                "tests/collateral/md2latex/paper-simple.md",
+                // "tests/collateral/md2latex/paper-bad.md",
+                "--bibliography", "tests/collateral/md2latex/bibliography.md",
+                "--output-dirpath", "files/examples/md2latex",
+                "--template", "ieee",
+                "--log-level", "DEBUG"
             ],
             "justMyCode": true,
         },

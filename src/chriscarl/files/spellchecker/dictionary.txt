@@ -28,6 +28,7 @@ incentivized
 landline
 quo
 bolded
+org
 
 # academic/invented
 BibTex
@@ -47,6 +48,9 @@ newlines
 url
 XLNet
 def
+alt
+https
+http
 
 # slang
 Influencers

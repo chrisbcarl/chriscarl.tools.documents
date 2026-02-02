@@ -96,6 +96,7 @@ pandas = "^3.0.0"
 lxml = "^6.0.2"
 requests = "^2.32.5"
 markdownify = "^1.2.2"
+markdown2 = "^2.5.4"
 
 
 [tool.poetry.group.dev.dependencies]  # poetry add package --group dev

@@ -6,10 +6,11 @@ Email:          chrisbcarl@outlook.com
 Date:           2026-01-25
 Description:
 
-core.lib.third.spellchecker is... TODO: lorem ipsum
+core.lib.third.spellchecker is thin wrappers around the pyspellchecker module
 core.lib are modules that contain code that is about (but does not modify) the library. somewhat referential to core.functor and core.types.
 
 Updates:
+    2026-02-01 - core.lib.third.spellchecker - FIX: wasnt auto-loading the dictionary
     2026-01-25 - core.lib.third.spellchecker - initial commit
 '''
 
@@ -19,6 +20,7 @@ import os
 import sys
 import logging
 import re
+from typing import Dict, Tuple, List
 
 # third party imports
 import spellchecker
@@ -80,8 +82,25 @@ def clean_line(line):
 
     return text
 
+T_SPELLCHECK_ERROR = Dict[str, List[Tuple[int, str, str]]]
+T_SPELLCHECK_WARN = Dict[str, List[Tuple[int, str]]]
+
 
 def spellcheck(content):
+    # type: (str) -> Tuple[T_SPELLCHECK_ERROR, T_SPELLCHECK_WARN, int]
+    '''
+    Description:
+        using pyspellcheck, go through the content and make error and warning recommendations
+        and get the word count
+    Arguments:
+        content: str
+    Returns:
+        Tuple[T_SPELLCHECK_ERROR, T_SPELLCHECK_WARN, int]
+            error_words - dict of lists {mispelling: [(lineno, line text, recommended replacement)]}
+            warning_words - dict of lists {mispelling: [(lineno, line text)]}
+            word_count
+    '''
+    load_dictionary()
     spell = spellchecker.SpellChecker()
     low_content = content.lower()
     visited = set()
