@@ -15,14 +15,16 @@ I've found throughout 3 semesters of grad school that working in Markdown is the
 Examples:
     md2latex tests/collateral/md2latex/paper.md `
         -b tests/collateral/md2latex/bibliography.md `
-        -o files/examples/md2latex
+        -o files/examples/md2latex/ieee -t ieee -sf
+        -ss  # skip spellcheck
 
-    md2latex tests/collateral/md2latex/paper-simple.md `
+    md2latex tests/collateral/md2latex/paper.md `
         -b tests/collateral/md2latex/bibliography.md `
-        -o files/examples/md2latex
+        -o files/examples/md2latex/chicago -t chicago -sf
+        -ss  # skip spellcheck
 
 TODO:
-    - add spellcheck flags, currently disabled
+    - default template doesnt work, figure something out import-wise...
     - refactor
 
 
@@ -46,6 +48,7 @@ import datetime
 import tempfile
 import pathlib
 import shutil
+import pprint
 import json
 import re
 
@@ -315,8 +318,8 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template=DEFAULT
     return render_dict
 
 
-def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', template=DEFAULT_TEMPLATE, wc=False, debug=False,):
-    # type: (str, str, str, str, bool, bool) -> int
+def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', template=DEFAULT_TEMPLATE, wc=False, spellcheck_fatal=False, skip_spellcheck=False, debug=False,):
+    # type: (str, str, str, str, bool, bool, bool, bool) -> int
     if template not in TEMPLATES:
         raise ValueError(f'template {template!r} not in {list(TEMPLATES)}')
 
@@ -532,37 +535,45 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
         if doclet['section'] in spellcheckable_sections:
             spellcheckable_words += md2latex.get_words_only(doclet['content'])
 
-    LOGGER.info('spellcheck...')
-    write_text_file('./ignoreme/spellcheckable_words.txt', spellcheckable_words)
 
-    error_words, warning_words, word_count = spellcheck(spellcheckable_words)
-    LOGGER.info('wc: %d', word_count)
-    if warning_words:
-        warnings.append(f'{len(warning_words)} warning words discovered!')
-        for word in sorted(warning_words):
-            warnings.append(f'    - {word}')
-            for lineno, idx in find_lineno_index(word, original_md_content):
-                warnings.append(f'        - lineno {lineno}, ...{original_md_content[idx-8:idx+len(word)+8]!r}...')
-    if error_words:
-        errors.append(f'{len(error_words)} error words discovered!')
-        for word in sorted(error_words):
-            correctword = error_words[word][0][2]
-            errors.append(f'    - {word} -> {correctword}')
-            for lineno, idx in find_lineno_index(word, original_md_content):
-                errors.append(f'        - lineno {lineno}, ...{original_md_content[idx-8:idx+len(word)+8]!r}...')
+    if skip_spellcheck:
+        LOGGER.warning('skipping spellcheck...')
     else:
-        LOGGER.info('no misspelled words! (probably)')
+        LOGGER.info('spellcheck...')
+        if debug:
+            write_text_file('./ignoreme/spellcheckable_words.txt', spellcheckable_words)
 
+        error_words, warning_words, word_count = spellcheck(spellcheckable_words)
+        LOGGER.info('wc: %d', word_count)
+        if warning_words:
+            warnings.append(f'{len(warning_words)} warning words discovered!')
+            for word in sorted(warning_words):
+                warnings.append(f'    - {word}')
+                for lineno, idx in find_lineno_index(word, original_md_content):
+                    warnings.append(f'        - lineno {lineno}, ...{original_md_content[idx-8:idx+len(word)+8]!r}...')
+        if error_words:
+            if spellcheck_fatal:
+                error_list = errors
+            else:
+                error_list = warnings
+            error_list.append(f'{len(error_words)} error words discovered!')
+            for word in sorted(error_words):
+                correctword = error_words[word][0][2]
+                error_list.append(f'    - {word} -> {correctword}')
+                for lineno, idx in find_lineno_index(word, original_md_content):
+                    error_list.append(f'        - lineno {lineno}, ...{original_md_content[idx-8:idx+len(word)+8]!r}...')
+        else:
+            LOGGER.info('no misspelled words! (probably)')
 
-    import pprint
-    pprint.pprint(interdoc_labels, indent=2, width=160)
+    if debug:
+        pprint.pprint(interdoc_labels, indent=2, width=160)
 
     if warnings:
         LOGGER.warning('%d warnings!', len(warnings))
         for warning in warnings:
             LOGGER.warning(warning)
     else:
-        LOGGER.info('warning free!')
+        LOGGER.info('early warning free!')
 
     if errors:
         LOGGER.error('%d errors!', len(errors))
@@ -570,7 +581,7 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
             LOGGER.error(error)
         sys.exit(1)
     else:
-        LOGGER.info('error free!')
+        LOGGER.info('early error free!')
 
     errors.clear()
     warnings.clear()
@@ -681,14 +692,12 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
         else:
             body.append(content)
 
-    # write_text_file('./ignoreme/output.tex', '\n'.join(body))
-
     if warnings:
         LOGGER.warning('%d warnings!', len(warnings))
         for warning in warnings:
             LOGGER.warning(warning)
     else:
-        LOGGER.info('warning free!')
+        LOGGER.info('pre-flight warning free!')
 
     if errors:
         LOGGER.error('%d errors!', len(errors))
@@ -696,7 +705,7 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
             LOGGER.error(error)
         sys.exit(1)
     else:
-        LOGGER.info('error free!')
+        LOGGER.info('pre-flight error free!')
 
     errors.clear()
     warnings.clear()
@@ -718,7 +727,8 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
     rendered_content = re.sub(r' {2,}', ' ', rendered_content)
     write_text_file(tex_output_filepath, rendered_content)
 
-    pprint.pprint(header_render, indent=4, width=160)
+    if debug:
+        pprint.pprint(header_render, indent=4, width=160)
 
     # run pdflatex 4 times...
     LOGGER.warning('deleting previous work files...')
@@ -783,6 +793,8 @@ def main():
         bibliography_filepath=args.bibliography_filepath,
         template=args.template,
         wc=args.word_count,
+        spellcheck_fatal=args.spellcheck_fatal,
+        skip_spellcheck=args.skip_spellcheck,
         debug=args.debug,
     )
 
