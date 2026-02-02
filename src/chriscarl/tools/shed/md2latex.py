@@ -100,6 +100,8 @@ REGEX_MARKDOWN_LATEX_INLINE = re.compile(r'(?:(?!\$\d[\d\.\,]+ \b))\$(?P<content
 
 
 
+REGEX_CITATION_CONTENT = re.compile(r'[A-Za-z0-9\-_\.]+')
+
 REGEX_CITATION = re.compile(r'<(?P<ref>[^>\n]+)>')
 REGEX_CITATION_WRONG = re.compile(r'\[([^\]]+)\]')
 REGEX_CITATION_PAGE = re.compile(r'<(?P<ref>[A-Za-z0-9\-_\.]+)(,\s+)?(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)?>')

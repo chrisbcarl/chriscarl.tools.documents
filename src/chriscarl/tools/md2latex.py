@@ -24,6 +24,15 @@ Examples:
         -ss  # skip spellcheck
 
 TODO:
+    - ref in table still bad ISE-201/assignments/00-llm/render/paper-md2pdf.pdf
+    - "ted to cross-reference whether" was picked up as a ref somehow...
+    - table doesnt get picked up if at end C:/Users/chris/OneDrive/_recent/SJSU_2026S/ISE-201/assignments/00-llm/paper-md2pdf.md
+        - even IF you add some text at the bottom to clear up the above
+        - moving "investigation-findings-tbl" stuff below that table causes massive problem
+    - old table missing caption/label doesnt get mentioned
+    - errant prints
+    - check research-aid-2 for leftovers
+    - find bibliography if close by
     - md2pdf vs md2latex, NOT THE SAME
     - default template doesnt work, figure something out import-wise...
     - refactor
@@ -159,6 +168,8 @@ def find_bad_citations(content, errors, warnings):
     for mo in md2latex.REGEX_CITATION_WRONG.finditer(content):
         start, end = mo.span()
         citation = content[start:end]
+        if not md2latex.REGEX_CITATION_CONTENT.match(citation):
+            continue
         if '-' in citation:
             errors.append(f'BAD [] citation style {citation}, use <> style instead')
         else:
@@ -764,8 +775,7 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
                 sys.exit(res)
         except subprocess.TimeoutExpired:
             kill(pid)
-            LOGGER.error('%d / %d - %s, TIMEOUT %0.2f sec!', c + 1, len(cmds), subprocess.list2cmdline(cmd), timeout)
-            LOGGER.debug('%d / %d - %s, TIMEOUT %0.2f sec!\n%s', c + 1, len(cmds), subprocess.list2cmdline(cmd), timeout, read_text_file_try(stdout))
+            LOGGER.error('%d / %d - %s, TIMEOUT %0.2f sec!\n%s', c + 1, len(cmds), subprocess.list2cmdline(cmd), timeout, read_text_file_try(stdout))
             sys.exit(2)
         finally:
             os.remove(stdout)
