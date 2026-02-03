@@ -24,6 +24,7 @@ Examples:
         -ss  # skip spellcheck
 
 TODO:
+    - test elipses and cdots behavior
     - ref in table still bad ISE-201/assignments/00-llm/render/paper-md2pdf.pdf
     - "ted to cross-reference whether" was picked up as a ref somehow...
     - table doesnt get picked up if at end C:/Users/chris/OneDrive/_recent/SJSU_2026S/ISE-201/assignments/00-llm/paper-md2pdf.md
@@ -239,6 +240,7 @@ def markdown_refs_to_latex(content, original_md_content, all_labels, interdoc_la
 
     return content
 
+
 def markdown_header_to_render_dict(text, bibliography_filepath, template=DEFAULT_TEMPLATE):
     # type: (str, str, str) -> dict
     bibliography_filepath = bibliography_filepath.replace('\\', '/')
@@ -330,7 +332,16 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template=DEFAULT
     return render_dict
 
 
-def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', template=DEFAULT_TEMPLATE, wc=False, spellcheck_fatal=False, skip_spellcheck=False, debug=False,):
+def markdown_to_latex(
+    md_filepath,
+    output_dirpath='',
+    bibliography_filepath='',
+    template=DEFAULT_TEMPLATE,
+    wc=False,
+    spellcheck_fatal=False,
+    skip_spellcheck=False,
+    debug=False,
+):
     # type: (str, str, str, str, bool, bool, bool, bool) -> int
     if template not in TEMPLATES:
         raise ValueError(f'template {template!r} not in {list(TEMPLATES)}')
@@ -393,8 +404,8 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
 
         for url_mo in md2latex.REGEX_URL.finditer(md_content):
             start = url_mo.start()
-            if md_content[start-1] != '(':
-                end = start+64
+            if md_content[start - 1] != '(':
+                end = start + 64
                 endline = md_content.find('\n', start) - 1
                 end = min([end, endline])
                 errors.append(f'naked url! enclose with []()! {md_content[start:end]}...')
@@ -547,7 +558,6 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
         if doclet['section'] in spellcheckable_sections:
             spellcheckable_words += md2latex.get_words_only(doclet['content'])
 
-
     if skip_spellcheck:
         LOGGER.warning('skipping spellcheck...')
     else:
@@ -607,7 +617,12 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
     append_appendix = False
     for doclet in doclets:
         section, content, label, caption, mo, data = (
-            doclet['section'], doclet['content'], doclet['label'], doclet['caption'], doclet['mo'], doclet['data'],
+            doclet['section'],
+            doclet['content'],
+            doclet['label'],
+            doclet['caption'],
+            doclet['mo'],
+            doclet['data'],
         )
         if section in set(['comment']):
             continue
@@ -621,7 +636,6 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
         if caption:
             # are there refs IN THE CAPTION?
             caption = markdown_refs_to_latex(caption, original_md_content, all_labels, interdoc_label_types, errors, template=template)
-
 
         # TODO: auto Fig. Table. Code. etc.
         if section == 'header':
@@ -691,7 +705,7 @@ def markdown_to_latex(md_filepath, output_dirpath='', bibliography_filepath='', 
 
             if section == 'quote':
                 # TODO: currently sane washing all > beginnings
-                content = '\n'.join(line[line.rindex('>')+1:].strip() for line in content.splitlines())
+                content = '\n'.join(line[line.rindex('>') + 1:].strip() for line in content.splitlines())
                 content = f'\\begin{{quotation}}\n{content}\n\\end{{quotation}}'
             elif section == 'list':
                 content = md2latex.markdown_list_to_latex(content)
