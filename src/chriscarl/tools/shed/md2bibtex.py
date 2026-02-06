@@ -10,6 +10,8 @@ tools.shed.md2bibtex is functions used by the tool that belong in the shed.
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-02-04 - tools.shed.md2bibtex - support for the refactors
+    2026-01-29 - tools.shed.md2bibtex - text_to_bibtex now replies with bibtex and non-bibtex
     2026-01-29 - tools.shed.md2bibtex - docs
     2026-01-25 - tools.shed.md2bibtex - initial commit
 '''
@@ -42,24 +44,23 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 
-def text_to_bibtex(text):
-    # type: (str) -> Tuple[str, Dict[str, str]]
+def text_to_bibtex(text, pretty=True, indent=4):
+    # type: (str, bool, int) -> Tuple[str, str]
     '''
     Description:
-        Given any text file, extract all of the bibtex from it.
-        Get back a clean bibtex and the labels in the bibtex.
+        Given any text file, extract all of the bibtex and non-bibtex from it.
     Arguments:
         text: str
             filepath or text content
     Returns:
-        Tuple[str, Dict[str, str]]
+        Tuple[str, str]
             str - bibtex-only content
-            Dict[str, str] - {label: citation-type}
+            str - non-bibtex content
     '''
     if is_file(text):
         text = read_text_file_try(text)
 
-    bibtex_content = bibtex.extract_from(text)
+    bibtex_content, non_bibtex_content = bibtex.extract_from_and_remove(text, pretty=pretty, indent=indent)
 
     # this is tricky, you only want to analyze stuff INSIDE quotations marks and braces...
     fixed_bibtex_content = bibtex_content[:]  # deep copy
@@ -74,20 +75,10 @@ def text_to_bibtex(text):
             bad_lines.append(substr)
             continue
 
-        fixed_bibtex_content = f'{fixed_bibtex_content[:start]}{latex.latex_escape(substr)}{fixed_bibtex_content[end:]}'
+        fixed_bibtex_content = f'{fixed_bibtex_content[:start]}{latex.latex_escape_raw(substr, latex.REGEX_LATEX_NEEDS_ESCAPE_ENCLOSED)}{fixed_bibtex_content[end:]}'
 
     if bad_lines:
         lines = '\n'.join(f'    - {line}' for line in bad_lines)
         raise RuntimeError(f'bad lines discovered containing "{{}}", replace them at source, not worth the headache:\n{lines}')
 
-    # # in a previous attempt I tried to escape everything correctly
-    #     for char in ['$', '#', '%', '&', '~', '_', '^', '{', '}']:
-    #         regex = r'[^\\]' + re.escape(char)
-    #         print(regex)
-    #         for submo in reversed(
-    #                 list(re.finditer(regex, bibtex_content[start:end]))):
-    #             substart, subend = submo.start(), submo.end()
-    #             bibtex_content = f'{bibtex_content[:start + substart]}\\{char}{bibtex_content[start + subend:]}'
-    # fixed_bibtex_content = re.sub(r'_', '\\_', bibtex_content)
-    labels = bibtex.get_labels(text, raise_on_null=True)
-    return fixed_bibtex_content, labels
+    return fixed_bibtex_content, non_bibtex_content

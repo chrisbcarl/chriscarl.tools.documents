@@ -13,6 +13,7 @@ TODO:
     test and refactor
 
 Updates:
+    2026-02-04 - tools.shed.md2latex - list conversion edge cases
     2026-02-01 - tools.shed.md2latex - added analyze_sections, markdown_emphasis_to_latex, markdown_list_to_latex, delete_latex_work_files
     2026-01-31 - tools.shed.md2latex - added get_word_count, word_count
     2026-01-25 - tools.shed.md2latex - initial commit
@@ -34,6 +35,7 @@ import markdown2
 from chriscarl.core.lib.stdlib.os import is_file
 from chriscarl.core.lib.stdlib.subprocess import which
 from chriscarl.core.lib.stdlib.io import read_text_file_try
+from chriscarl.core.types.str import indent
 from chriscarl.core.functors.parse import latex
 from chriscarl.core.functors.parse import bibtex
 
@@ -57,18 +59,24 @@ def assert_executables_exist():
     for exe in EXECUTABLES:
         assert which(exe), f'choco install {exe} -y' if WIN32 else 'apt install {} -y'
 
+
+# early extract sections of markdown
+
 # BIG sections of markdown potentially
 REGEX_CAPTION_LABEL_COMMON = re.compile(r'(?P<caption>(?:caption: *)[^\n]+(?:\n+))?(?P<label>(?:label: *)[^\n]+(?:\n+))?', flags=re.DOTALL | re.MULTILINE)
 REGEX_HTML_COMMENT = re.compile(r'\<\!--(.*?)--\>', flags=re.DOTALL | re.MULTILINE)
 REGEX_MARKDOWN_YAML = re.compile(r'---\n(.*?)\n---', flags=re.DOTALL | re.MULTILINE)
 REGEX_MARKDOWN_TABLE = re.compile(r'(?:caption: *)?(?P<caption>[^\n]+)?\n+?(?:label: *)?(?P<label>[^\n]+)?\n+?\|(?P<content>.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
-REGEX_MARKDOWN_LATEX = re.compile(r'\$\$\n(%\\label\{)?(?P<label>[A-Za-z0-9\-_\.]+)?(\}\n)?(?P<content>.*?)\$\$', flags=re.DOTALL | re.MULTILINE)
+REGEX_MARKDOWN_LATEX = re.compile(r'\$\$\n\s*(%?\\label\{)?(?P<label>[A-Za-z0-9\-_\.]+)?(\}\n)?(?P<content>.*?)\$\$', flags=re.DOTALL | re.MULTILINE)
 REGEX_MARKDOWN_MULTILINE_LITERAL = re.compile(r'```\n(?P<content>.*?)```', flags=re.DOTALL | re.MULTILINE)
-REGEX_MARKDOWN_CODE = re.compile(r'(?:caption: *)?(?P<caption>[^\n]+)?\n+?(?:label: *)?(?P<label>[^\n]+)?\n+?```(?P<language>[a-z\-\+\# ]+?)\n(?P<content>.*?)```', flags=re.DOTALL | re.MULTILINE)
+REGEX_MARKDOWN_CODE = re.compile(
+    r'(?:caption: *)?(?P<caption>[^\n]+)?\n+?(?:label: *)?(?P<label>[^\n]+)?\n+?```(?P<language>[a-z\-\+\# ]+?)\n(?P<content>.*?)```', flags=re.DOTALL | re.MULTILINE
+)
 # NOTE: THIS ONE IS WEIRD, doing groups[content] will only give you the last quote, but it DOES pick all of them up...
 REGEX_MARKDOWN_QUOTE = re.compile(r'(?P<caption>(?:caption: *)[^\n]+(?:\n+))?(?P<label>(?:label: *)[^\n]+(?:\n+))?(?P<content>^>.*\n){2,}', flags=re.MULTILINE)
 # NOTE: special unfortunately...
-REGEX_MARKDOWN_LIST = re.compile(r'(?:[ \t\n]*(?:[\d+]\.|[-\*]+)\s*(?:.+)\n){2,}', flags=re.MULTILINE)
+# old - (?:[ \t\n]*(?:[\d+]\.|[-\*]+)\s*(?:.+)\n){2,}
+REGEX_MARKDOWN_LIST = re.compile(r'(?:^[ \t\n]*(?:[\d+]\. |[-\*]+) ?(?:.*)\n){1,}', flags=re.MULTILINE)
 
 REGEX_LARGE_SECTIONS = {
     'comment': REGEX_HTML_COMMENT,
@@ -92,13 +100,13 @@ REGEX_SMALL_SECTIONS = {
 }
 
 # https://www.freecodecamp.org/news/how-to-write-a-regular-expression-for-a-url/
-REGEX_URL = re.compile(r'(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?')
+REGEX_URL = re.compile(
+    r'(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?\/[a-zA-Z0-9]{2,}|((https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https:\/\/www\.|http:\/\/www\.|https:\/\/|http:\/\/)[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?'
+)
 # REGEX_URL = re.compile(r'(https?:\/\/)[a-z0-9\-\_\.]{3,}\/?[A-Za-z0-9\-\_\.\/\?\=\&]*')
 REGEX_MARKDOWN_URL = re.compile(r'\[(?P<alt>.*?)\]\((?P<path>.*?\))')
 REGEX_MARKDOWN_LITERAL_INLINE = re.compile(r'`(?P<content>[^`]+)`')
 REGEX_MARKDOWN_LATEX_INLINE = re.compile(r'(?:(?!\$\d[\d\.\,]+ \b))\$(?P<content>.+?)\$')  # , flags=re.DOTALL
-
-
 
 REGEX_CITATION_CONTENT = re.compile(r'[A-Za-z0-9\-_\.]+')
 
@@ -115,9 +123,6 @@ REGEX_CITATION_INTERDOC_CODE = re.compile(r'(?P<pref>Listing\s*)?<code-(?P<ref>[
 REGEX_CITATION_INTERDOC_HREF = re.compile(r'(?P<pref>Section\s*|Chapter\s*)?<href-(?P<ref>[A-Za-z0-9\-_\.]+)>')
 REGEX_CITATION_INTERDOC_FIG = re.compile(r'(?P<pref>Fig\.\s*)?<fig-(?P<ref>[^>]+?)>')
 
-
-
-
 # REGEX_MARKDOWN_TABLE = re.compile(r'\|(.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
 REGEX_SIC = re.compile(r'([\w])\[(sic)\]')
 
@@ -130,7 +135,12 @@ REGEX_MARKDOWN_DOUBLE_QUOTE = re.compile(r'"(.*?)"', flags=re.MULTILINE)  # doub
 REGEX_MARKDOWN_BOLD_ITALIC = re.compile(r'\*{3,}(.+?)\*{3,}', flags=re.MULTILINE)  # bold-italic, *? is ungreedy
 REGEX_MARKDOWN_BOLD = re.compile(r'\*{2,}(.+?)\*{2,}', flags=re.MULTILINE)  # bold, *? is ungreedy
 REGEX_MARKDOWN_ITALIC = re.compile(r'\*{1,}(.+?)\*{1,}', flags=re.MULTILINE)  # italics, *? is ungreedy
+
 # TODO: strikethrough, underline
+REGEX_LATEX_LABEL = re.compile(r'%\s*?\\label\{(?P<label>[A-Za-z0-9\-_\.]+)\}')
+# BUG: content is not correctly captured, has to be massaged...
+REGEX_MARKDOWN_BIBLIOGRAPHY_SECTION = re.compile(r'\#+\s+(bibliography|references|citations)\n(?P<content>[^#].*\n)+(#+\s+[A-z])?', flags=re.IGNORECASE)
+REGEX_MARKDOWN_EMPTY_LITERAL = re.compile(r'```\s*```', flags=re.MULTILINE)
 
 
 def get_words_only(text):
@@ -160,6 +170,8 @@ def get_words_only(text):
         REGEX_MARKDOWN_BOLD_ITALIC,
         REGEX_MARKDOWN_BOLD,
         REGEX_MARKDOWN_ITALIC,
+        #
+        REGEX_MARKDOWN_EMPTY_LITERAL,
     ]
     for regex in regexes:
         text = regex.sub(' ', text)
@@ -220,14 +232,20 @@ def analyze_sections(md_content, regex_dict):
         if first_mo:
             start, end = first_mo.span()
             if start == 0:
-                sections.append((section, md_content[:end], first_mo))
+                content = md_content[:end]
+                sections.append((section, content, first_mo))
             else:
-                sections.append(('any', md_content[:start], None))
-                sections.append((section, md_content[start:end], first_mo))
+                content = md_content[:start]
+                sections.append(('any', content, None))
+                content = md_content[start:end]
+                sections.append((section, content, first_mo))
             md_content = md_content[end:]
         else:
-            sections.append(('any', md_content, None))
+            content = md_content
+            sections.append(('any', content, None))
             md_content = ''
+        # if section in ['latex']:
+        #     print('breakpoint')
     return sections
 
 
@@ -247,7 +265,18 @@ def markdown_emphasis_to_latex(text):
     text = REGEX_MARKDOWN_ITALIC.sub(r'\\emph{\1}', text)
     return text
 
+
 def markdown_list_to_latex(content):
+    # hack to avoid the latex to mathml conversion...
+    _old_run = markdown2.Latex.run
+    markdown2.Latex.run = (lambda self, text: text)
+    # NOTE: BUG: markdown2 will treat \( strangely, I can't figure out why just now, so escape it and deal with it later
+    latex_inline = {}
+    for m, mo in enumerate(reversed(list(re.finditer(r'\\\(.+\\\)', content)))):
+        start, end = mo.span()
+        key = f'/LATEX_INLINE{m}/'
+        latex_inline[key] = content[start:end]
+        content = f'{content[:start]}{key}{content[end:]}'
     html = markdown2.markdown(
         content,
         extras={
@@ -258,6 +287,17 @@ def markdown_list_to_latex(content):
             'middle-word-em': False,  # so urls that have MIT_technology_ wont become MIT<em>technology</em>
         }
     )
+    markdown2.Latex.run = _old_run
+    while '<pre><code>' in html:
+        mo = re.search(r'<pre><code>(.+)</code></pre>', html, flags=re.DOTALL | re.MULTILINE)
+        if not mo:
+            raise RuntimeError('this cannot happen at this stage')
+        start, end = mo.span()
+        inner_latex_list = indent(markdown_list_to_latex(mo.groups()[0]))
+        html = f'{html[:start]}\n{inner_latex_list}\n{html[end:]}'
+        print('fuck')
+    html = re.sub(r'(<p>|<\/p>)', '', html)  # markdown2 injects <p> into its html lists
+
     latex_list = html[:]
     latex_list = latex_list.replace('<ol>', r'\begin{enumerate}')
     latex_list = latex_list.replace('</ol>', r'\end{enumerate}')
@@ -266,10 +306,14 @@ def markdown_list_to_latex(content):
     latex_list = latex_list.replace('<li>', r'\item ')
     latex_list = latex_list.replace('</li>', r'')
 
+    for key, value in latex_inline.items():
+        latex_list = latex_list.replace(key, value)
+
     return latex_list
 
 
 LATEX_EXTS_TO_CLEAN = ['.aux', '.bbl', '.bcf', '.blg', '.lof', '.log', '.lot', '.out', '.synctex(busy)', '.synctex.gz', '.run.xml', '.toc']
+
 
 def delete_latex_work_files(dirpath, filename, extra=None):
     extra = extra or []

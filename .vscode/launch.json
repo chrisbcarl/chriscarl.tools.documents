@@ -43,12 +43,22 @@
             "console": "integratedTerminal",
             "args": [
                 // "tests/collateral/md2latex/paper.md",
-                "tests/collateral/md2latex/paper-simple.md",
-                // "tests/collateral/md2latex/paper-bad.md",
-                "--bibliography", "tests/collateral/md2latex/bibliography.md",
-                "--output-dirpath", "files/examples/md2latex",
-                "--template", "ieee",
-                "--log-level", "DEBUG"
+                // // "tests/collateral/md2latex/paper-simple.md",
+                // // "tests/collateral/md2latex/paper-bad.md",
+                // "--bibliography", "tests/collateral/md2latex/bibliography.md",
+                // "--output-dirpath", "files/examples/md2latex",
+                // "--template", "ieee",
+                // "--log-level", "DEBUG",
+
+                "C:/Users/chris/OneDrive/_recent/SJSU_2026S/CMPE-180D/assignments/hw1/2026S-SJSU-CMPE180D-hw_1-chris_carl.md",
+                "--output-dirpath", "C:/Users/chris/OneDrive/_recent/SJSU_2026S/CMPE-180D/assignments/hw1/hw1/render",
+                "--template", "math",
+                "--log-level", "DEBUG",
+
+                // "C:/Users/chris/OneDrive/_recent/SJSU_2026S/MATH-161B/assignments/hw1/2026S-SJSU-MATH161B-hw_1-chris_carl.md",
+                // "--output-dirpath", "ignoreme/plz",
+                // "--template", "math",
+                // "--log-level", "DEBUG"
             ],
             "justMyCode": true,
         },

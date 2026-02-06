@@ -53,30 +53,13 @@ class TestCase(UnitTest):
 
     # @unittest.skip('lorem ipsum')
     def test_case_0(self):
-        bibtex_no_point = r'''
-    @article{CitekeyArticle,
+        bibtex_no_point = r'''@article{CitekeyArticle,
         journal  = "\url{Proceedings of the National Academy of Sciences}",
         year     = 1963,
     }'''
-        bibtex_no_key = r'''
-    @article{
+        bibtex_no_key = r'''@article{
         year     = 1963,
     }'''
-        markdown = r'''
-# Some kind of markdown header
-- list
-- code block
-    ```bibtex
-    @article{CitekeyArticle,
-        author   = "P. J. Cohen",  % inlinecomment
-        % comment
-        title    = "The independence of the continuum hypothesis",
-        journal  = "Proceedings of the National Academy of Sciences",
-        pages    = "1143--1148",
-    }
-    ```
-- another list element
-'''
         bibtex = r'''@article{CitekeyArticle,
     author  = "P. J. Cohen",  % inlinecomment
     % comment
@@ -84,17 +67,26 @@ class TestCase(UnitTest):
     journal = "Proceedings of the National Academy of Sciences",
     pages   = "1143--1148",
 }'''
+        markdown = rf'''
+# Some kind of markdown header
+- list
+- code block
+    ```bibtex
+    but not actually
+    ```
+- another list element
+'''
         variables = [
-            (lib.text_to_bibtex, (bibtex_no_point, )),
-            (lib.text_to_bibtex, (bibtex_no_key, )),
-            (lib.text_to_bibtex, (bibtex, )),
+            (lib.text_to_bibtex, (bibtex_no_point, ), dict(pretty=False)),
+            (lib.text_to_bibtex, (bibtex_no_key, ), dict(pretty=False)),
+            (lib.text_to_bibtex, (bibtex, ), dict(pretty=False)),
+            (lib.text_to_bibtex, (markdown + bibtex + markdown, ), dict(pretty=False)),
         ]
         controls = [
             RuntimeError,
-            ValueError,
-            (bibtex, {
-                'CitekeyArticle': 'article'
-            }),
+            (bibtex_no_key, ''),
+            (bibtex, ''),
+            (bibtex, markdown * 2),
         ]
         self.assert_null_hypothesis(variables, controls)
 

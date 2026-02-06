@@ -51,6 +51,7 @@ def
 alt
 https
 http
+backticks
 
 # slang
 Influencers

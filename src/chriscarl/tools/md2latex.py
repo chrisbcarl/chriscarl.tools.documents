@@ -24,6 +24,10 @@ Examples:
         -ss  # skip spellcheck
 
 TODO:
+    - support multi-bib files
+    - bib ensure the types supported are actually supported "software" is not supported as a bib
+    - make a paper-md that really covers every edge case
+        - references INSIDE math doesn't really work... better to put it outside.
     - test elipses and cdots behavior
     - ref in table still bad ISE-201/assignments/00-llm/render/paper-md2pdf.pdf
     - "ted to cross-reference whether" was picked up as a ref somehow...
@@ -40,6 +44,7 @@ TODO:
 
 
 Updates:
+    2026-02-04 - tools.md2latex - math template mode enabled, tested with a statistics submission, works, covered MANY edge cases.
     2026-02-01 - tools.md2latex - banged this refactor phase 1 out in about 8 hours. totally worth it.
                  tools.md2latex - added find_bad_citations, markdown_refs_to_latex, markdown_header_to_render_dict, markdown_to_latex
     2026-01-29 - tools.md2latex - got a hankerin to at least start getting the outlines done
@@ -78,8 +83,9 @@ from chriscarl.tools.shed import md2latex
 from chriscarl.tools.shed import md2bibtex
 from chriscarl.core.functors.parse.str import unicode_replace
 from chriscarl.core.functors.parse import latex
+from chriscarl.core.functors.parse import bibtex
 from chriscarl.core.functors.parse import markdown
-from chriscarl.core.types.str import indent, find_lineno_index
+from chriscarl.core.types.str import indent, dedent, find_lineno_index
 from chriscarl.core.lib.third.spellchecker import spellcheck
 import chriscarl.files.manifest_documents as mand
 
@@ -104,6 +110,7 @@ TEMPLATES = {
     'default': mand.FILEPATH_MD2LATEX_DEFAULT_TEMPLATE,
     'chicago': mand.FILEPATH_MD2LATEX_CHICAGO_TEMPLATE,
     'ieee': mand.FILEPATH_MD2LATEX_IEEE_TEMPLATE,
+    'math': mand.FILEPATH_MD2LATEX_CHICAGO_TEMPLATE,  # chicago with some hardcoding
 }
 DEFAULT_TEMPLATE = list(TEMPLATES)[0]
 
@@ -119,6 +126,7 @@ class Arguments:
     template: str = DEFAULT_TEMPLATE
     spellcheck_fatal: bool = False
     skip_spellcheck: bool = False
+    skip_pdf: bool = False
     # wc-applet
     word_count: bool = False
     # non-app
@@ -137,6 +145,7 @@ class Arguments:
         app.add_argument('--template', '-t', type=str, default=DEFAULT_TEMPLATE, choices=TEMPLATES, help='document style, really')
         app.add_argument('--spellcheck-fatal', '-sf', action='store_true', help='spellcheck fail is fatal')
         app.add_argument('--skip-spellcheck', '-ss', action='store_true', help='skip-spellcheck entirely')
+        app.add_argument('--skip-pdf', '-sp', action='store_true', help='generate .tex only, no run pdf :(')
 
         wc = parser.add_argument_group('word-count applet')
         wc.add_argument('--word-count', '-wc', action='store_true', help='get the word count, exit')
@@ -188,8 +197,8 @@ def markdown_refs_to_latex(content, original_md_content, all_labels, interdoc_la
         if not mo2:
             mo3 = md2latex.REGEX_CITATION_PAGE.match(citation)
             if not mo3:
-                linenos = list(find_lineno_index(citation, original_md_content))
-                raise RuntimeError(f'citation at lineno {linenos[0][0] + 1} is completely baffling to me: {citation!r}')
+                lineno = list(find_lineno_index(citation, original_md_content))[0][0] + 1
+                raise RuntimeError(f'citation at lineno {lineno} is completely baffling to me: {citation!r}')
             citation_mo = mo3
         else:
             citation_mo = mo2
@@ -209,7 +218,7 @@ def markdown_refs_to_latex(content, original_md_content, all_labels, interdoc_la
             if interdoc_label_types[ref] == 'latex':
                 cite_command = '~\\eqref'
         else:
-            if template == 'chicago':
+            if template in ['chicago', 'math']:
                 cite_command = '\\autocite'
             else:
                 cite_command = '\\cite'
@@ -252,8 +261,13 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template=DEFAULT
     header_title = header.get('title', 'Untitled').strip()
     header_toc = header.get('toc', False)
     header_doublespaced = header.get('doublespaced', False)
+    if template in ['math']:
+        header_doublespaced = False  # hard low
     header_date = header.get('date', datetime.datetime.now().strftime('%B %d, %Y'))
-    header_geometry = header.get('geometry', 'margin=1in')
+    default_margin = 'margin=1in'
+    header_geometry = header.get('geometry', default_margin)
+    if template in ['math']:
+        header_geometry = 'margin=1.5in' if header_geometry == default_margin else header_geometry
     header_course = header.get('course', '')
     header_abstract = header.get('abstract', '')
     header_keywords_lst = [ele.strip() for ele in header.get('keywords', '').split(',')]
@@ -271,7 +285,7 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template=DEFAULT
         location = header_author.get('location', '').strip()
         occupation = header_author.get('occupation', '').strip()
 
-        if template == 'chicago':
+        if template in ['chicago', 'math']:
             # \author{John C. Neu
             #     \thanks{Electronic address: \texttt{neu@math.berkeley.edu}}
             # }
@@ -309,7 +323,7 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template=DEFAULT
 
     render_dict = {}
 
-    if template == 'chicago':
+    if template in ['chicago', 'math']:
         render_dict['<TITLE>'] = f'\\textbf{{{header_title}}}'
         render_dict['<ADDBIBRESOURCE>'] = f'\\addbibresource{{{bibliography_filepath}}}' if bibliography_filepath else ''
     elif template == 'ieee':
@@ -340,12 +354,14 @@ def markdown_to_latex(
     wc=False,
     spellcheck_fatal=False,
     skip_spellcheck=False,
+    skip_pdf=False,
     debug=False,
 ):
-    # type: (str, str, str, str, bool, bool, bool, bool) -> int
+    # type: (str, str, str, str, bool, bool, bool, bool, bool) -> int
     if template not in TEMPLATES:
         raise ValueError(f'template {template!r} not in {list(TEMPLATES)}')
 
+    md_relpath = os.path.relpath(abspath(md_filepath), os.getcwd())
     md_dirpath = dirpath(md_filepath)
     md_filename = filename(md_filepath)
     if not output_dirpath:
@@ -353,7 +369,7 @@ def markdown_to_latex(
     output_dirpath = abspath(output_dirpath)
     os.makedirs(output_dirpath, exist_ok=True)
     tex_output_filepath = abspath(output_dirpath, f'{md_filename}.tex')
-    bibliography_output_filepath = abspath(output_dirpath, f'{md_filename}.bib')
+    bibliography_output_filepath = abspath(output_dirpath, f'{md_filename}.bib')  # latex.latex_remove(md_filename)
     pdf_output_filepath = abspath(output_dirpath, f'{md_filename}.pdf')
 
     md_content = read_text_file_try(md_filepath)
@@ -361,17 +377,29 @@ def markdown_to_latex(
     if not md_content.endswith('\n'):
         md_content = f'{md_content}\n'
 
+    bibtex_content = '', {}
+    bibtex_content, md_content = md2bibtex.text_to_bibtex(md_content)
+    if bibtex_content:
+        LOGGER.info('analyzed markdown-inline bibliography')
+
     word_count = md2latex.word_count(md_content)
     LOGGER.info('wc: %d', word_count)
     if wc:
         return 0
 
-    bibtex_content, bibtex_labels = '', {}
     if bibliography_filepath:
-        LOGGER.info('analyzing bibliography')
-        bibtex_content, bibtex_labels = md2bibtex.text_to_bibtex(bibliography_filepath)
-        if debug:
-            LOGGER.debug('bibtex labels: %s', json.dumps(bibtex_labels))
+        LOGGER.info('analyzing bibliography "%s"', bibliography_filepath)
+        bibtex_content_fp, _ = md2bibtex.text_to_bibtex(bibliography_filepath)
+        bibtex_content = f'{bibtex_content}{bibtex_content_fp}'
+
+    try:
+        bibtex_labels = bibtex.get_label_citation(bibtex_content, parse=False, pretty=True, nulls=False, dedupe=False)
+    except (ValueError, KeyError) as ex:
+        LOGGER.error('%s - there is a duplicate or null among the original document or bibliography!', ex)
+        LOGGER.debug('%s - there is a duplicate or null among the original document or bibliography!', ex, exc_info=True)
+        sys.exit(1)
+    if debug:
+        LOGGER.debug('bibtex labels: %s', json.dumps(bibtex_labels))
 
     write_text_file(bibliography_output_filepath, bibtex_content)
     LOGGER.info('wrote "%s"', bibliography_output_filepath)
@@ -380,7 +408,7 @@ def markdown_to_latex(
     warnings = []
 
     # right off the rip I can replace this stuff no problem.
-    md_content = unicode_replace(md_content)
+    md_content = md2latex.REGEX_MARKDOWN_EMPTY_LITERAL.sub('', md_content)
 
     LOGGER.info('analyzing sections')
     sections = md2latex.analyze_large_sections(md_content)
@@ -402,13 +430,15 @@ def markdown_to_latex(
     while sections:
         section, md_content, mo = sections.pop(0)
 
-        for url_mo in md2latex.REGEX_URL.finditer(md_content):
-            start = url_mo.start()
-            if md_content[start - 1] != '(':
-                end = start + 64
-                endline = md_content.find('\n', start) - 1
-                end = min([end, endline])
-                errors.append(f'naked url! enclose with []()! {md_content[start:end]}...')
+        if section != 'comment':
+            for url_mo in md2latex.REGEX_URL.finditer(md_content):
+                start = url_mo.start()
+                if md_content[start - 1] != '(':
+                    end = start + 64
+                    endline = md_content.find('\n', start) - 1
+                    end = min([end, endline])
+                    lineno = list(find_lineno_index(md_content[start:end], original_md_content))[0][0]
+                    errors.append(f'naked url! enclose with []()! lineno {lineno} {md_content[start:end]}...')
 
         if appendix:
             appendix = False  # switch it back off, we JUST turned it on for someone else
@@ -418,11 +448,9 @@ def markdown_to_latex(
         caption = ''
         groups = []
         groupdict = {}
-        start, end = -1, -1
         if mo is not None:
             groups = mo.groups()
             groupdict = mo.groupdict()
-            start, end = mo.span()
         if section != 'any':
             if section in set(['table', 'code', 'latex', 'quote', 'literal']):
                 caption = groupdict.get('caption', '')
@@ -432,18 +460,26 @@ def markdown_to_latex(
                 if section in set(['quote']):
                     # NOTE: starting from the very first > to the last...
                     content = md2latex.REGEX_CAPTION_LABEL_COMMON.sub('', md_content)
+                elif section in set(['latex']):
+                    # $$  # 301 gets caught as the label...
+                    # 301 = 03~ 00~ 01 = 0000~0011, 0000~0000, 0000~0001
+                    # $$
+                    if r'\label' not in md_content:
+                        label = ''
+                        content = f'{label}{content}'
 
                 if not content:
                     raise RuntimeError('could not determine content?!')
+                lineno = list(find_lineno_index(md_content, original_md_content))[0][0] + 1
 
-                if not label and section not in set(['literal']):
+                if not label and section not in set(['literal', 'quote']):
                     example = 'label: something-or-other'
                     if section in set(['latex']):
-                        example = '%\\label{something-or-other}'
-                    errors.append(f'{section} missing "{example}"!\n{indent(md_content[:64])}...')
-                if not caption and section not in set(['latex', 'literal']):
+                        example = '%\\label{something-or-other}, note the % comment is for markdown purposes.'
+                    errors.append(f'{section} missing "{example}" at "{md_relpath}", lineno {lineno}!\n{indent(md_content[:64])}...')
+                if not caption and section not in set(['latex', 'literal', 'quote']):
                     # caption is also required for these
-                    errors.append(f'{section} missing "caption: Something or Other"!\n{indent(md_content[:64])}...')
+                    errors.append(f'{section} missing "caption: Something or Other" at "{md_relpath}", lineno {lineno}!\n{indent(md_content[:64])}...')
 
                 if label:
                     if label.startswith('label:'):
@@ -477,19 +513,20 @@ def markdown_to_latex(
                 label = ''
                 caption = ''
                 data = {}
+                lineno = list(find_lineno_index(md_content_sub, original_md_content))[0][0] + 1
                 groupdict_sub = {}
                 if mo_sub is not None:
                     groupdict_sub = mo_sub.groupdict()
                 if section_sub == 'header':
                     octothorps = groupdict_sub.get('octothorps') or ''
                     title = groupdict_sub.get('title', '')
+
                     data['octothorps'] = octothorps
                     data['title'] = title
 
                     label = title[:]
                     if len(octothorps) > 4:
-                        linenos = list(find_lineno_index(md_content_sub, original_md_content))
-                        errors.append(f'headings > 4 not supported at lineno {linenos[0][0] + 1}, {label!r}')
+                        errors.append(f'headings > 4 not supported at "{md_relpath}", lineno {lineno}, {label!r}')
                         continue
 
                     if title.lower() == 'appendix':
@@ -572,7 +609,7 @@ def markdown_to_latex(
             for word in sorted(warning_words):
                 warnings.append(f'    - {word}')
                 for lineno, idx in find_lineno_index(word, original_md_content):
-                    warnings.append(f'        - lineno {lineno}, ...{original_md_content[idx-8:idx+len(word)+8]!r}...')
+                    warnings.append(f'        - lineno {lineno + 1}, ...{original_md_content[idx-8:idx+len(word)+8]!r}...')
         if error_words:
             if spellcheck_fatal:
                 error_list = errors
@@ -583,7 +620,7 @@ def markdown_to_latex(
                 correctword = error_words[word][0][2]
                 error_list.append(f'    - {word} -> {correctword}')
                 for lineno, idx in find_lineno_index(word, original_md_content):
-                    error_list.append(f'        - lineno {lineno}, ...{original_md_content[idx-8:idx+len(word)+8]!r}...')
+                    error_list.append(f'        - lineno {lineno + 1}, ...{original_md_content[idx-8:idx+len(word)+8]!r}...')
         else:
             LOGGER.info('no misspelled words! (probably)')
 
@@ -615,6 +652,7 @@ def markdown_to_latex(
     appendix_body = []
     appendix = False
     append_appendix = False
+    prev_section = ''
     for doclet in doclets:
         section, content, label, caption, mo, data = (
             doclet['section'],
@@ -672,13 +710,14 @@ def markdown_to_latex(
                 replacement = replacement.replace('<WIDTH>', '0.66\\linewidth')
             content = replacement
         elif section == 'latex':
+            content = dedent(content).strip()  # NOTE: the .strip() is CRITICAL. if you have \begin{math}\n\n\begin{aligned} you're TOAST
             aligned = content.startswith('\\begin{align')
-            content = content.strip()  # NOTE: the .strip() is CRITICAL. if you have \begin{math}\n\n\begin{aligned} you're TOAST
             if aligned:
-                # convert it to an equation anyway. regardless if sense or not.
-                # content = f'\\begin{{math}}\n{content}\n\\end{{math}}'
+                # convert it to an equation anyway. regardless if sense or not. \begin{math}\end{math} aint working
                 content = f'\\begin{{equation}}\n{content}\n\\end{{equation}}'
+            content = md2latex.REGEX_LATEX_LABEL.sub('', content)  # just remove the label and stick where it needs to go below:
             content = content.replace(r'\begin{equation}', f'\\begin{{equation}}\n\\label{{{label}}}')
+            content = '\n'.join(line for line in content.splitlines() if line.strip())
         elif section == 'literal':
             content = f'\\begin{{verbatim}}\n{content}\n\\end{{verbatim}}'
         elif section == 'code':
@@ -693,12 +732,12 @@ def markdown_to_latex(
                 url = url_mo.groups()[-1][:-1]  # lop off last )
                 content = f'{content[:url_mo.start()]}\\url{{{url}}}{content[url_mo.end():]}'
             content = md2latex.REGEX_MARKDOWN_URL.sub(r'\\url{\g<2>}', content)
-            # are there refs IN THE CONTENT?
-            content = markdown_refs_to_latex(content, original_md_content, all_labels, interdoc_label_types, errors, template=template)
             # are there `literal` in the content?
             content = md2latex.REGEX_MARKDOWN_LITERAL_INLINE.sub(r'\\lstinline{\g<1>}', content)
             # are there $latex$ in the content?
             content = md2latex.REGEX_MARKDOWN_LATEX_INLINE.sub(r'\\(\g<1>\\)', content)
+            # if postcontent != content:
+            #     content = postcontent
             # are there any emphasis like bold, italic, underline, etc?
             # TODO: underline/strikethrough
             content = md2latex.markdown_emphasis_to_latex(content)
@@ -708,15 +747,37 @@ def markdown_to_latex(
                 content = '\n'.join(line[line.rindex('>') + 1:].strip() for line in content.splitlines())
                 content = f'\\begin{{quotation}}\n{content}\n\\end{{quotation}}'
             elif section == 'list':
-                content = md2latex.markdown_list_to_latex(content)
+                postcontent = md2latex.markdown_list_to_latex(content)
+                content = postcontent
 
+        # are there refs IN THE CONTENT?
+        if section not in set(['code', 'literal']):
+            content = markdown_refs_to_latex(content, original_md_content, all_labels, interdoc_label_types, errors, template=template)
+        if section in set(['any']):
+            new = latex.latex_escape(content)
+            if new != content:
+                print('!' * 80)
+                print(content)
+                print('?' * 80)
+                print(new)
+            content = new
+
+        content = unicode_replace(content)
+        content = latex.latex_replace(content)
         # print('caption', caption, 'label', label)
         # body.append(f'caption: {caption}')
         # body.append(f'label: {label}')
+        content.count('\n')
+        if content.count('\n') > 1:
+            content = dedent(content).strip()
+
+        if section in ['latex', 'list', 'header']:
+            content = f'\n\n{content}\n\n'
         if append_appendix:
             appendix_body.append(content)
         else:
             body.append(content)
+        prev_section = section
 
     if warnings:
         LOGGER.warning('%d warnings!', len(warnings))
@@ -740,8 +801,8 @@ def markdown_to_latex(
     LOGGER.info('Rendering. All pre-flight checks passed.')
     LOGGER.info('NOTE: If spellcheck failed, pass --spellcheck to force exit')
 
-    header_render['<BODY>'] = '\n\n'.join(body)
-    header_render['<APPENDIX>'] = '\n\n'.join(appendix_body)
+    header_render['<BODY>'] = ''.join(body)
+    header_render['<APPENDIX>'] = ''.join(appendix_body)
 
     template_filepath = TEMPLATES[template]
     with open(template_filepath, 'r', encoding='utf-8') as r:
@@ -750,8 +811,10 @@ def markdown_to_latex(
     rendered_content = template_content[:]
     for k, v in header_render.items():
         rendered_content = rendered_content.replace(k, v)
-    rendered_content = re.sub(r' {2,}', ' ', rendered_content)
+    rendered_content = re.sub(r'([^\n ]) {2,}', r'\g<1> ', rendered_content)
+    rendered_content = re.sub(r'\n{3,},', '\n\n', rendered_content)
     write_text_file(tex_output_filepath, rendered_content)
+    LOGGER.info('wrote "%s"', tex_output_filepath)
 
     if debug:
         pprint.pprint(header_render, indent=4, width=160)
@@ -759,6 +822,8 @@ def markdown_to_latex(
     # run pdflatex 4 times...
     LOGGER.warning('deleting previous work files...')
     md2latex.delete_latex_work_files(output_dirpath, md_filename)
+    if skip_pdf:
+        sys.exit()
 
     if template == 'ieee':
         bibtex_cmd = 'bibtex'
@@ -820,6 +885,7 @@ def main():
         wc=args.word_count,
         spellcheck_fatal=args.spellcheck_fatal,
         skip_spellcheck=args.skip_spellcheck,
+        skip_pdf=args.skip_pdf,
         debug=args.debug,
     )
 

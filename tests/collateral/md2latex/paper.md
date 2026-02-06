@@ -27,18 +27,15 @@ Updates:
     2025-12-21 16:01 - paper - started
 
 Examples:
-    python scripts/research-aid-2.py `
-        scripts/examples/inputs/paper.md `
-        --bibliography scripts/examples/inputs/bibliography.md `
-        --template ieee `
-        --output-dirpath scripts/examples/outputs/research-aid-2/ieee
+    md2latex tests/collateral/md2latex/paper.md `
+        -b tests/collateral/md2latex/bibliography.md `
+        -o files/examples/md2latex/ieee -t ieee -sf
+        -ss  # skip spellcheck
 
-    python scripts/research-aid-2.py `
-        scripts/examples/inputs/paper.md `
-        --bibliography scripts/examples/inputs/bibliography.md `
-        --template chicago `
-        --output-dirpath scripts/examples/outputs/research-aid-2/chicago
-
+    md2latex tests/collateral/md2latex/paper.md `
+        -b tests/collateral/md2latex/bibliography.md `
+        -o files/examples/md2latex/chicago -t chicago -sf
+        -ss  # skip spellcheck
 -->
 
 # Introduction
@@ -66,6 +63,21 @@ Here's how I do basic citations with a bibliography.
 If you want a basic citation, just use `<>` and include the `BibTex` key <CitekeyArticle>. If you want to add a page number, feel free to do so. <Citekey-Inproceedings, 66>. You can also add a range of page numbers like so: <CitekeyProceedings, 69-99>. If you want to say section instead of page, use  <CitekeyBook, s69-99>. Say you want to include a chapter title in the middle of the citation, go do it <CitekeyBooklet, Some Chapter Inside, 66-69>.
 
 ### Advanced
+
+
+#### Inline Bibliography
+Include inline $\BibTeX$ code so long as you create a heading with the title "Bibliography", "Citations", or "References". Here is an example in literal text, but know that the Markdown document contained this exact text without the backticks and was swallowed up by the processing tool, and here is me referencing the Masters Thesis <totally-new-citation>.
+
+<!--will be extracted via tool-->
+```
+@techreport{totally-new-citation,
+  title       = "Definitely",
+  author      = "not",
+  institution = "Lorem",
+  year        = 6969,
+  month       = sep
+}
+```
 
 
 #### Figures

@@ -17,10 +17,10 @@
 % https://tex.stackexchange.com/a/116572
 \usepackage{listings}
 \lstset{
- basicstyle=\ttfamily,
- columns=fullflexible,
+  basicstyle=\ttfamily,
+  columns=fullflexible,
 % frame=single,
- breaklines=true,
+  breaklines=true,
 % postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}, % makes literal red arrrow newlines...
 }
 % \usepackage{url}
@@ -42,25 +42,30 @@
 
 
 
+\def\BibTeX{
+    {\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}
+}
+
+
 \title{Paper: Example}
-\date{February 01, 2026} % \today
+\date{February 04, 2026} % \today
 
 
 \author{
- % \IEEEauthorblockN{Chris Carl}
- % \IEEEauthorblockA{
- % \textit{San Jose State University} \\
- % \textit{Masters of Science in Computer Engineering Student}\\
- % San Jose, USA \\
- % chris.carl@sjsu.edu
- % }
+    % \IEEEauthorblockN{Chris Carl}
+    % \IEEEauthorblockA{
+    % \textit{San Jose State University} \\
+    % \textit{Masters of Science in Computer Engineering Student}\\
+    % San Jose, USA \\
+    % chris.carl@sjsu.edu
+    % }
 
 \IEEEauthorblockN{Chris Carl}
 \IEEEauthorblockA{
- \textit{San Jose State University} \\ 
- \textit{Masters of Science in Computer Engineering Student} \\ 
- San Jose, CA, United States of America \\ 
- chris.carl@sjsu.edu \\
+    \textit{San Jose State University} \\ 
+    \textit{Masters of Science in Computer Engineering Student} \\ 
+    San Jose, CA, United States of America \\ 
+    chris.carl@sjsu.edu \\
 }
 }
 
@@ -86,25 +91,21 @@ be sorted, later, list of terms, Some, unordered, will
 \end{IEEEkeywords}
 
 
+
+
 \section{Introduction}\label{Introduction}
 
 If you'd like to make a large section, feel free to type as normal underneath it. You can use double newlines to make a new sentence. Note that I'm using english generated text from \url{https://placeholdertext.org/english-placeholder-text/}.
 
 Clearly who two here society spoon computer tiny wet from me man. Valley mostly cleverly stone sunny farm — long special weak if ten company work bored email daughter; Clear hour... Musician eleven result monument: yellow phone heavy upload measure thirsty nature, fast by already car my. Planet stay clock probably build scroll information forward tower faith lift space fourteen visitor keyboard dead, child peace digital fourteen. Help blanket continent, working monument, mother Sunday office later late screen: green music count old!
 
-
-
 \section{Basics}\label{Basics}
 
 Lets go over some basics.
 
-
-
 \subsection{Autocorrected}\label{Autocorrected}
 
 Double spaced words are auto-corrected to single space. ``Quotations" are adjusted accordingly, normally you'd need a `\lstinline{'} to get the opening quote, and a \lstinline{''} to get the closing. This is handled already. Apostrophe's are also handled.
-
-
 
 \subsection{Typesetting}\label{Typesetting}
 
@@ -114,49 +115,35 @@ If you want \textbf{bolded}, use the four asterisks as normal.
 
 If you want \textbf{\emph{bolded and italicized}}, use the six asterisks as normal.
 
-
-
-
 \subsection{Citations}\label{Citations}
 
 Here's how I do basic citations with a bibliography.
 
 If you want a basic citation, just use \lstinline{<>} and include the \lstinline{BibTex} key \cite{CitekeyArticle}. If you want to add a page number, feel free to do so. \cite[p. 66]{Citekey-Inproceedings}. You can also add a range of page numbers like so: \cite[pp. 69-99]{CitekeyProceedings}. If you want to say section instead of page, use \cite[\S 69-99]{CitekeyBook}. Say you want to include a chapter title in the middle of the citation, go do it \cite[Some Chapter Inside, pp. 66-69]{CitekeyBooklet}.
 
-
-
 \subsubsection{Advanced}\label{Advanced}
+
+
+
+\paragraph{Inline Bibliography}\label{Inline-Bibliography}
+
+Include inline \(\BibTeX\) code so long as you create a heading with the title ``Bibliography", ``Citations", or ``References". Here is an example in literal text, but know that the Markdown document contained this exact text without the backticks and was swallowed up by the processing tool, and here is me referencing the Masters Thesis \cite{totally-new-citation}.
 
 \paragraph{Figures}\label{Figures}
 
-You need to include packages \lstinline{graphicx} if you want figures.
-
-
-
-
- \begin{figure}[htbp]
- \centerline{\includegraphics[width=\linewidth]{image.jpg}}
- \caption{image.jpg}
- \label{image.jpg}
- \end{figure}
- 
-
-
- \begin{figure}[htbp]
- \centerline{\includegraphics[width=\linewidth]{960px-LambdaPlaques.jpg}}
- \caption{image online via \cite{Aimage}}
- \label{960px-LambdaPlaques.jpg}
- \end{figure}
- 
-
-I've got two figures, See Fig. ~\ref{image.jpg} and Fig. ~\ref{960px-LambdaPlaques.jpg}. The first figure used is referenced by local file, the other is url. Both are supported. How they are displayed in the document is all down to typesetting and isn't very controllable.
+You need to include packages \lstinline{graphicx} if you want figures.\begin{figure}[htbp]
+                \centerline{\includegraphics[width=\linewidth]{image.jpg}}
+                \caption{image.jpg}
+                \label{image.jpg}
+            \end{figure}\begin{figure}[htbp]
+                \centerline{\includegraphics[width=\linewidth]{960px-LambdaPlaques.jpg}}
+                \caption{image online via \cite{Aimage}}
+                \label{960px-LambdaPlaques.jpg}
+            \end{figure}I've got two figures, See Fig. ~\ref{image.jpg} and Fig. ~\ref{960px-LambdaPlaques.jpg}. The first figure used is referenced by local file, the other is url. Both are supported. How they are displayed in the document is all down to typesetting and isn't very controllable.
 
 The way you reference them in the document is 'basename', so make sure to copy paste the file basename in full.
 
 You can also reference other things inside the ``alt" description of the image, as I've done in the second table.
-
-
-
 
 \paragraph{Math}\label{Math}
 
@@ -180,31 +167,33 @@ Inline math is supported like \(y = Ax + b\) as well as \(\forall x \in X\). Or 
 \end{aligned}
 \end{equation}
 
+
+
 \begin{equation}
 \label{eq-profit}
 \begin{aligned}
 U(p_s, c) &= R(p_s) - E(c) \\
- &= Mp_s \Psi(p_s) - N\displaystyle\sum_{c_k \in c} c_k \Phi_k(c_k)
+            &= Mp_s \Psi(p_s) - N\displaystyle\sum_{c_k \in c} c_k \Phi_k(c_k)
 \end{aligned}
 \end{equation}
+
+
 
 \paragraph{Quotes}\label{Quotes}
 
 \begin{quotation}
 Break weather bad file goal, use capital but polite suddenly honestly tired into open. Probably highway story laugh up tower around possible dark strongly still alive usually, music mountain classroom really too goal.
 
-Wide short direction probably will \cite{CitekeyTechreport} watch faith information May week here empty fake water hard join house soon private safe!
+watch faith information May week here empty fake water hard join house soon private safe!
 
 Citizen politely closed across bad different city like mind surface mountain famous partly. Week earth too nurse available walk market safe, deep team house alive lamp speed pillow bright rarely little north.
 
-By - Lorem Ipsum \cite{CitekeyPhdthesis}
+
 \end{quotation}
 
 \paragraph{Tables}\label{Tables}
 
-You need to include packages \lstinline{tabularx,booktabs} if you want tables. For IEEE, I offer two situations--a single column table like Table ~\ref{tbl-1-col}, but double column tables like Table ~\ref{tbl-2-col} are also supported. Currently any table with \(\text{cols} > 3\) will be set up as a double column table else single column table.
-
-\begin{table}
+You need to include packages \lstinline{tabularx,booktabs} if you want tables. For IEEE, I offer two situations--a single column table like Table ~\ref{tbl-1-col}, but double column tables like Table ~\ref{tbl-2-col} are also supported. Currently any table with \(\text{cols} > 3\) will be set up as a double column table else single column table.\begin{table}
 \caption{Single Column Table \cite{CitekeyPhdthesis}}
 \label{tbl-1-col}
 \begin{tabularx}{\linewidth}{l C }
@@ -215,11 +204,7 @@ Column & Also Column \\
 2 & b \\
 \bottomrule
 \end{tabularx}
-\end{table}
-
-Tables have a specific referencing mechanism which is entirely custom and not portable. It's simply the best I could do on a shoestring...
-
-\begin{table*}
+\end{table}Tables have a specific referencing mechanism which is entirely custom and not portable. It's simply the best I could do on a shoestring...\begin{table*}
 \caption{Two Column Table \cite{CitekeyUnpublished}}
 \label{tbl-2-col}
 \begin{tabularx}{\textwidth}{l l l l C }
@@ -236,35 +221,29 @@ Numbers & Alphabet & variables & sum & multiplicat \\
 
 You need to include packages \lstinline{lstlistings} if you want code. In every case, you need to specify the caption, ref, and language. The caption and ref are custom, the language portion is normal.
 
-They can be cited using the code- prefix like Listing ~\ref{code-python}, Listing ~\ref{code-java}, Listing ~\ref{code-cpp}.
-
-\begin{lstlisting}[language=Python, caption={Listing with Python in it.}, label={code-python}]
+They can be cited using the code- prefix like Listing ~\ref{code-python}, Listing ~\ref{code-java}, Listing ~\ref{code-cpp}.\begin{lstlisting}[language=Python, caption={Listing with Python in it.}, label={code-python}]
 def func():
- print('hello world')
+    print('hello world')
 
 # Note how if you have a really really long comment or something that definitely goes over the column limit, it will be re-indented in an attempt to save itself.
 func()
 
-\end{lstlisting}
-
-\begin{lstlisting}[language=Java, caption={Listing with Java in it.}, label={code-java}]
+\end{lstlisting}\begin{lstlisting}[language=Java, caption={Listing with Java in it.}, label={code-java}]
 public class Main {
- public static int main(String[] args) {
- System.out.println("hello world");
- return 0;
- }
+    public static int main(String[] args) {
+        System.out.println("hello world");
+        return 0;
+    }
 }
 
-\end{lstlisting}
-
-\begin{lstlisting}[language=C++, caption={Listing with C++ in it.}, label={code-cpp}]
+\end{lstlisting}\begin{lstlisting}[language=C++, caption={Listing with C++ in it.}, label={code-cpp}]
 #include <iostream>
 using std::cout;
 using std::endl;
 
 int main(int argc, char** argv) {
- cout << "hello world" << endl;
- return 0;
+    cout << "hello world" << endl;
+    return 0;
 }
 
 \end{lstlisting}
@@ -299,11 +278,10 @@ You can reference other sections in your own document. I call these ``href" and 
 \end{enumerate}
 
 
+
 \section{Lorem Ipsum}\label{Lorem-Ipsum}
 
 If you don't have a lot of text, things like figures and double column tables tend to occupy single pages on their own. Just be aware of this.
-
-
 
 \subsection{Lots of Lorem}\label{Lots-of-Lorem}
 
@@ -318,9 +296,6 @@ Eight better see open your try government center fake ten. Building long October
 Hand turn broken working old push that fake useful mountain physical gray rare chair very team yet. Cold lot yesterday never effort sometimes it on program busy alive train hard win health through. Full main need use road true; Thirsty before tiny big park tiny customer, week fairly light village. Crowded empty desert crowded: castle narrow faith building, forest lightly. Your lazy ugly smile, carry better memory Monday finished respect similar lamp, scroll rich peacefully currently stale us tiny other.
 
 Windy bitter use suddenly update down currently, nature hand actor. Lot better road currently computer together wait court how dead possible dry and image. Sound young technology friendly book owner university boss nurse different partly tomorrow. Simple station write child them quietly effort rude road driver certainly fourteen anywhere tiny good even time answer. Ancient special join twenty yellow note day leaf sister, find orange memory chair?
-
-
-
 
 % % https://tex.stackexchange.com/a/305413
 % \begin{table*}
@@ -374,16 +349,17 @@ Windy bitter use suddenly update down currently, nature hand actor. Lot better r
 \bibliography{C:/Users/chris/src/chriscarl.tools.documents/files/examples/md2latex/ieee/paper.bib}
 
 
+
+
 \newpage
 \appendix
 \label{appendix}
 
+
+
 \subsection{Backup Material}\label{Backup-Material}
 
 Tunnel hospital then close him, laugh daughter year economy often, bright message three, student planet. Sunny fake soft warm move bank friend, evening heavy bright Thursday color salty light alive force sixteen neighbor again. Wet friend open forget black bored its rough close crowded roof a. Run slowly hospital she knife create lake bank tree, empty hard. Ocean funny not dream sleepy, bridge already how, big letter factory stone your hopeful: go easy smooth black high year?
-
-
-
 
 \subsection{For your curiosity}\label{For-your-curiosity}
 

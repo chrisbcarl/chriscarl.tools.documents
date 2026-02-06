@@ -8,7 +8,13 @@ Description:
 
 tools.md2bibtex is a tool which can extract all of the BibTex in a file and prettify it.
 
+Examples:
+    md2bibtex tests/collateral/md2latex/paper.md `
+        --output-dirpath files/examples/md2bibtex `
+        --skip-pretty
+
 Updates:
+    2026-02-04 - tools.md2bibtex - support for the refactors
     2026-01-25 - tools.md2bibtex - initial commit
 '''
 
@@ -28,8 +34,9 @@ from chriscarl.core.constants import TEMP_DIRPATH
 from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, filename
-from chriscarl.tools.shed import md2bibtex
 from chriscarl.core.lib.stdlib.io import write_text_file
+from chriscarl.core.functors.parse import bibtex
+from chriscarl.tools.shed import md2bibtex
 
 SCRIPT_RELPATH = 'chriscarl/tools/md2bibtex.py'
 if not hasattr(sys, '_MEIPASS'):
@@ -56,8 +63,11 @@ class Arguments:
     Document this class with any specifics for the process function.
     '''
     input_filepath: str
+    skip_pretty: bool = False
+    indent: int = 4
     overwrite: bool = False
     output_dirpath: str = DEFAULT_OUTPUT_DIRPATH
+    # debug
     debug: bool = False
     log_level: str = 'INFO'
     log_filepath: str = DEFAULT_LOG_FILEPATH
@@ -68,6 +78,8 @@ class Arguments:
         parser = ArgumentParser(prog=SCRIPT_NAME, description=__doc__, formatter_class=ArgparseNiceFormat)
         app = parser.add_argument_group('app')
         app.add_argument('input_filepath', type=str, help='what text file do you want to get the bibtex out of?')
+        app.add_argument('--skip-pretty', '-sp', action='store_true', help='you want ugly???')
+        app.add_argument('--indent', '-i', type=int, default=4, help='if pretty, indent by how many?')
         app.add_argument('--overwrite', action='store_true', help='overwrite the input filepath?')
         app.add_argument('--output-dirpath', '-o', type=str, default=DEFAULT_OUTPUT_DIRPATH, help='where do you want to save a text of the sequence? same filename will be used')
 
@@ -107,7 +119,8 @@ def main():
         output_filepath = abspath(args.output_dirpath, f'{filename(args.input_filepath)}.bib')
 
     try:
-        bibtex, labels = md2bibtex.text_to_bibtex(args.input_filepath)
+        bib, _ = md2bibtex.text_to_bibtex(args.input_filepath, pretty=not args.skip_pretty, indent=args.indent)
+        labels = bibtex.get_label_citation(bib, parse=False, pretty=True, nulls=False, dedupe=False)
     except Exception as ex:
         LOGGER.error('%s', ex)
         LOGGER.debug('%s', ex, exc_info=True)
@@ -116,7 +129,7 @@ def main():
     LOGGER.info('encountered %d labels', len(labels))
     LOGGER.debug(list(labels))
 
-    write_text_file(output_filepath, bibtex)
+    write_text_file(output_filepath, bib)
     LOGGER.info('wrote "%s"', output_filepath)
     return 0
 

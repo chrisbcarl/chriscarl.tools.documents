@@ -68,7 +68,7 @@ If you want **bolded**, use the four asterisks as normal.
 If you want ***bolded and italicized***, use the six asterisks as normal.
 
 
-## Citations
+## Citations and References
 Here's how I do basic citations with a bibliography.
 
 If you want a basic citation, just use `<>` and include the `BibTex` key [CitekeyArticle]. If you want to add a page number, feel free to do so. [Citekey-Inproceedings, 66]. You can also add a range of page numbers like so: [CitekeyProceedings, 69-99]. If you want to say section instead of page, use  [CitekeyBook, s69-99]. Say you want to include a chapter title in the middle of the citation, go do it [CitekeyBooklet, Some Chapter Inside, 66-69].
