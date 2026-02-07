@@ -6,7 +6,23 @@ Email:          chrisbcarl@outlook.com
 Date:           2026-02-06
 Description:
 
-tools.md2pdf is a tool which converts Markdown to PDF via latex
+tools.md2pdf is a tool which converts Markdown to PDF via LaTeX WITH a bibliography!
+I've found throughout 3 semesters of grad school that working in Markdown is the obvious choice
+    but citations are a pain in the ass and research collation is a pain in the ass
+    so my current solution is the following:
+    markdown essay file + markdown/bibtex "research" file with certain -isms that lock the 2 together.
+
+Examples:
+    # note that the output is a .tex file, not a .pdf
+    md2pdf tests/collateral/md2latex/paper.md `
+        -b tests/collateral/md2latex/bibliography.md `
+        -o files/examples/md2latex/ieee -t ieee -sf
+        -ss  # skip spellcheck
+
+    md2pdf tests/collateral/md2latex/paper.md `
+        -b tests/collateral/md2latex/bibliography.md `
+        -o files/examples/md2latex/chicago -t chicago -sf
+        -ss  # skip spellcheck
 
 Updates:
     2026-02-06 - tools.md2pdf - initial commit

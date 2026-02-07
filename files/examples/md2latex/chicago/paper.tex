@@ -81,7 +81,7 @@
 
 
 \title{\textbf{Paper: Example}}
-\date{February 04, 2026} % \today
+\date{February 07, 2026} % \today
 % \author{John C. Neu
 % \thanks{Electronic address: \texttt{neu@math.berkeley.edu}}
 % }
@@ -109,7 +109,22 @@
 \clearpage
 
 
-
+% <!--
+% Updates:
+% 2026-01-03 18:44 - paper - text actually reads like english and makes some godamn sense
+% 2025-12-21 16:01 - paper - started
+% 
+% Examples:
+% md2pdf tests/collateral/md2latex/paper.md `
+% -b tests/collateral/md2latex/bibliography.md `
+% -o files/examples/md2latex/ieee -t ieee -sf
+% -ss # skip spellcheck
+% 
+% md2pdf tests/collateral/md2latex/paper.md `
+% -b tests/collateral/md2latex/bibliography.md `
+% -o files/examples/md2latex/chicago -t chicago -sf
+% -ss # skip spellcheck
+% -->
 
 \section{Introduction}\label{Introduction}
 
@@ -145,7 +160,15 @@ If you want a basic citation, just use \lstinline{<>} and include the \lstinline
 
 \paragraph{Inline Bibliography}\label{Inline-Bibliography}
 
-Include inline \(\BibTeX\) code so long as you create a heading with the title ``Bibliography", ``Citations", or ``References". Here is an example in literal text, but know that the Markdown document contained this exact text without the backticks and was swallowed up by the processing tool, and here is me referencing the Masters Thesis \autocite{totally-new-citation}.
+Include inline \(\BibTeX\) code so long as you create a heading with the title ``Bibliography", ``Citations", or ``References". Here is an example in literal text, but know that the Markdown document contained this exact text without the backticks and was swallowed up by the processing tool, and here is me referencing the Masters Thesis \autocite{totally-new-citation}.% <!--will be extracted via tool
+% @techreport{totally-new-citation,
+% title = "Definitely",
+% author = "not",
+% institution = "Lorem",
+% year = 6969,
+% month = sep
+% }
+% -->
 
 \paragraph{Figures}\label{Figures}
 

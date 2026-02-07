@@ -6,6 +6,7 @@ title: >
 subtitle:
 author: Chris Carl <chris.carl@sjsu.edu>
 toc: true
+# template: default
 # geometry: "margin=1in"
 # ieee
 abstract: This is an example "paper" that demonstrates MY PERSONAL METHODOLOGY for dealing with latex in IEEE, Chicago, APA, and other formats.

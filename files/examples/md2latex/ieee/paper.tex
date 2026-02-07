@@ -48,7 +48,7 @@
 
 
 \title{Paper: Example}
-\date{February 06, 2026} % \today
+\date{February 07, 2026} % \today
 
 
 \author{
@@ -162,7 +162,7 @@ You need to include packages \lstinline{graphicx} if you want figures.\begin{fig
                 \centerline{\includegraphics[width=\linewidth]{960px-LambdaPlaques.jpg}}
                 \caption{image online via \cite{Aimage}}
                 \label{960px-LambdaPlaques.jpg}
-            \end{figure}I've got two figures, See Fig. \cite{image.jpg} and Fig. \cite{960px-LambdaPlaques.jpg}. The first figure used is referenced by local file, the other is url. Both are supported. How they are displayed in the document is all down to typesetting and isn't very controllable.
+            \end{figure}I've got two figures, See Fig. ~\ref{image.jpg} and Fig. ~\ref{960px-LambdaPlaques.jpg}. The first figure used is referenced by local file, the other is url. Both are supported. How they are displayed in the document is all down to typesetting and isn't very controllable.
 
 The way you reference them in the document is 'basename', so make sure to copy paste the file basename in full.
 
@@ -172,7 +172,7 @@ You can also reference other things inside the ``alt" description of the image, 
 
 You need to include packages \lstinline{amsmath,amssymb,amsfonts} if you want math.
 
-Inline math is supported like \(y = Ax + b\) as well as \(\forall x \in X\). Or you can make explicit equations like Eq \cite{eq-rm-ilp} and Eq \cite{eq-profit}.
+Inline math is supported like \(y = Ax + b\) as well as \(\forall x \in X\). Or you can make explicit equations like Eq ~\eqref{eq-rm-ilp} and Eq ~\eqref{eq-profit}.
 
 \begin{equation}
 \label{eq-rm-ilp}
@@ -216,7 +216,7 @@ Citizen politely closed across bad different city like mind surface mountain fam
 
 \paragraph{Tables}\label{Tables}
 
-You need to include packages \lstinline{tabularx,booktabs} if you want tables. For IEEE, I offer two situations--a single column table like Table \cite{tbl-1-col}, but double column tables like Table \cite{tbl-2-col} are also supported. Currently any table with \(\text{cols} > 3\) will be set up as a double column table else single column table.\begin{table}
+You need to include packages \lstinline{tabularx,booktabs} if you want tables. For IEEE, I offer two situations--a single column table like Table ~\ref{tbl-1-col}, but double column tables like Table ~\ref{tbl-2-col} are also supported. Currently any table with \(\text{cols} > 3\) will be set up as a double column table else single column table.\begin{table}
 \caption{Single Column Table \cite{CitekeyPhdthesis}}
 \label{tbl-1-col}
 \begin{tabularx}{\linewidth}{l C }
@@ -244,7 +244,7 @@ Numbers & Alphabet & variables & sum & multiplicat \\
 
 You need to include packages \lstinline{lstlistings} if you want code. In every case, you need to specify the caption, ref, and language. The caption and ref are custom, the language portion is normal.
 
-They can be cited using the code- prefix like Listing \cite{code-python}, Listing \cite{code-java}, Listing \cite{code-cpp}.\begin{lstlisting}[language=Python, caption={Listing with Python in it.}, label={code-python}]
+They can be cited using the code- prefix like Listing ~\ref{code-python}, Listing ~\ref{code-java}, Listing ~\ref{code-cpp}.\begin{lstlisting}[language=Python, caption={Listing with Python in it.}, label={code-python}]
 def func():
     print('hello world')
 
@@ -276,27 +276,27 @@ int main(int argc, char** argv) {
 You can reference other sections in your own document. I call these ``href" and the following list is all hyperlinked regardless of output format.
 
 \begin{enumerate}
-\item Section \cite{Introduction}
-\item Section \cite{Basics}
+\item Section ~\ref{Introduction}
+\item Section ~\ref{Basics}
 \begin{itemize}
-\item Section \cite{Autocorrected}
-\item Section \cite{Typesetting}
-\item Section \cite{Citations}
+\item Section ~\ref{Autocorrected}
+\item Section ~\ref{Typesetting}
+\item Section ~\ref{Citations}
 \begin{itemize}
-\item Section \cite{Advanced}
+\item Section ~\ref{Advanced}
 \begin{itemize}
-\item Section \cite{Interdoc-Citations}
-\item Section \cite{Math}
-\item Section \cite{Figures}
-\item Section \cite{Quotes}
-\item Section \cite{Tables}
-\item Section \cite{Code}
+\item Section ~\ref{Interdoc-Citations}
+\item Section ~\ref{Math}
+\item Section ~\ref{Figures}
+\item Section ~\ref{Quotes}
+\item Section ~\ref{Tables}
+\item Section ~\ref{Code}
 \end{itemize}
 \end{itemize}
 \end{itemize}
-\item Section \cite{Lorem-Ipsum}
+\item Section ~\ref{Lorem-Ipsum}
 \begin{itemize}
-\item Section \cite{Lots-of-Lorem}
+\item Section ~\ref{Lots-of-Lorem}
 \end{itemize}
 \end{enumerate}
 

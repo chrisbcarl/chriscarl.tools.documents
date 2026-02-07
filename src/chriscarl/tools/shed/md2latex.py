@@ -755,7 +755,8 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
         if section in set(['yaml']):
             if not headers:
                 headers, renders = markdown_header_to_render_dict(content, bibliography_output_filepath, template=template)
-                template = headers['template']  # gets overriden if default
+                template = headers.get('template', template)  # gets overriden if default
+                headers['template'] = template
             else:
                 lineno = list(find_lineno_index(doclet.content, original_md_content))[0][0]
                 warnings.append(f'multiple yamls detected at "{md_relpath}", lineno {lineno}! NOT PROCESSING AS HEADER')
@@ -849,8 +850,10 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
         if section in set(['code', 'literal', 'math']):
             mo = REGEX_CITATION.search(content)
             if mo:
-                lineno = list(find_lineno_index(content[mo.start():mo.end()], original_md_content))[0][0]
-                errors.append(f'illegal citation placement in {section!r} at "{md_relpath}", lineno {lineno}!')
+                possible_citation = mo.groupdict()['ref']
+                if possible_citation.lower() in labels:
+                    lineno = list(find_lineno_index(content[mo.start():mo.end()], original_md_content))[0][0]
+                    errors.append(f'illegal citation placement in {section!r} at "{md_relpath}", lineno {lineno}!')
         else:
             content = markdown_refs_to_latex(content, original_md_content, labels, errors, template=template)
         if section in set(['any']):

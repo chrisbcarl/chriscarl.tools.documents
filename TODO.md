@@ -5,6 +5,23 @@ pandoc wrapper
     too deeply nested is a lie.
 
 md2pdf
+    - bib ensure the types supported are actually supported "software" is not supported as a bib
+    - make a paper-md that really covers every edge case
+        - references INSIDE math doesn't really work... better to put it outside.
+    - test elipses and cdots behavior
+    - ref in table still bad ISE-201/assignments/00-llm/render/paper-md2pdf.pdf
+    - "ted to cross-reference whether" was picked up as a ref somehow...
+    - table doesnt get picked up if at end C:/Users/chris/OneDrive/_recent/SJSU_2026S/ISE-201/assignments/00-llm/paper-md2pdf.md
+        - even IF you add some text at the bottom to clear up the above
+        - moving "investigation-findings-tbl" stuff below that table causes massive problem
+    - old table missing caption/label doesnt get mentioned
+    - errant prints
+    - check research-aid-2 for leftovers
+    - find bibliography if close by
+    - md2pdf vs md2latex, NOT THE SAME
+    - default template doesnt work, figure something out import-wise...
+    - refactor
+
     bugs
 
         interref is being referred to through autocite but should instead be a ~ref...
