@@ -68,8 +68,7 @@ If you want a basic citation, just use `<>` and include the `BibTex` key <Citeke
 #### Inline Bibliography
 Include inline $\BibTeX$ code so long as you create a heading with the title "Bibliography", "Citations", or "References". Here is an example in literal text, but know that the Markdown document contained this exact text without the backticks and was swallowed up by the processing tool, and here is me referencing the Masters Thesis <totally-new-citation>.
 
-<!--will be extracted via tool-->
-```
+<!--will be extracted via tool
 @techreport{totally-new-citation,
   title       = "Definitely",
   author      = "not",
@@ -77,7 +76,7 @@ Include inline $\BibTeX$ code so long as you create a heading with the title "Bi
   year        = 6969,
   month       = sep
 }
-```
+-->
 
 
 #### Figures
