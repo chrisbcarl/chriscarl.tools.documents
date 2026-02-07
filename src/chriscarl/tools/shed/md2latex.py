@@ -10,6 +10,7 @@ tools.shed.md2latex is individual funcs that support the larger tool that COULD 
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-02-07 - tools.shed.md2latex - added process_labels, added template election in the yaml, overal refactor for params
     2026-02-06 - tools.shed.md2latex - refactor such that most of the functions are hosted here
     2026-02-04 - tools.shed.md2latex - list conversion edge cases
     2026-02-01 - tools.shed.md2latex - added analyze_sections, markdown_emphasis_to_latex, markdown_list_to_latex, delete_latex_work_files
@@ -27,6 +28,7 @@ import datetime
 import pathlib
 import shutil
 import string
+import pprint
 import re
 from typing import Tuple, List, Optional, Dict
 
@@ -44,6 +46,7 @@ from chriscarl.core.types.str import indent, dedent, find_lineno_index
 from chriscarl.core.functors.parse.str import unicode_replace
 from chriscarl.core.functors.parse import latex
 from chriscarl.core.functors.parse import markdown
+from chriscarl.files import manifest_documents as mand
 from chriscarl.tools import md2bibtex
 
 SCRIPT_RELPATH = 'chriscarl/tools/shed/md2latex.py'
@@ -59,6 +62,13 @@ LOGGER.addHandler(logging.NullHandler())
 
 WIN32 = sys.platform == 'win32'
 EXECUTABLES = ['wkhtmltopdf', 'miktex', 'rsvg-convert'] if WIN32 else [] + ['pandoc']
+TEMPLATES = {
+    'default': mand.FILEPATH_MD2LATEX_DEFAULT_TEMPLATE,
+    'chicago': mand.FILEPATH_MD2LATEX_CHICAGO_TEMPLATE,
+    'ieee': mand.FILEPATH_MD2LATEX_IEEE_TEMPLATE,
+    'math': mand.FILEPATH_MD2LATEX_CHICAGO_TEMPLATE,  # chicago with some hardcoding
+}
+DEFAULT_TEMPLATE = list(TEMPLATES)[0]
 
 
 def assert_executables_exist():
@@ -254,8 +264,6 @@ def analyze_sections(md_content, regex_dict):
             content = md_content
             sections.append(('any', content, None))
             md_content = ''
-        # if section in ['latex']:
-        #     print('breakpoint')
     return sections
 
 
@@ -578,6 +586,35 @@ def sections_to_doclets(sections, md_filepath, output_dirpath):
     return doclets, interdoc_labels, download_url_filepaths, errors, warnings
 
 
+def process_labels(bibtex_labels, interdoc_labels):
+    # type: (Dict[str, str], Dict[str, str]) -> Tuple[Dict[str, Dict[str, str]], List[str], List[str]]
+    '''
+    Description:
+        given bibtex labels that look like
+            {'intel-micro': '@misc{intel-micro,\n    title...
+        given interdoc_labels that look like
+            {'13a': 'any', '301-packed': 'latex', ...
+    Returns:
+        Tuple[Dict[str, Dict[str, str]], List[str], List[str]]
+            labels {'original-label': {section='bib', label='Original-Label'}}
+            errors
+            warnings
+    '''
+    errors, warnings = [], []
+    # labels storage {'original-label': {section='bib', label='Original-Label'}}
+    labels = {}
+    for label in bibtex_labels:  # just the keys are the labels
+        labels[label.lower()] = dict(section='bib', label=label)
+
+    for label, section in interdoc_labels.items():
+        label_lower = label.lower()
+        if label_lower in labels:
+            errors.append(f'duplicate {section} label {label!r}')
+        labels[label_lower] = dict(section=section, label=label)
+
+    return labels, errors, warnings
+
+
 def doclets_spellcheck(doclets, md_filepath):
     # type: (List[Doclet], str) -> Tuple[int, List[str], List[str]]
     '''
@@ -622,12 +659,15 @@ def doclets_spellcheck(doclets, md_filepath):
     return word_count, errors, warnings
 
 
-def markdown_refs_to_latex(content, original_md_content, all_labels_lowcase, interdoc_label_types, errors, template):
-    # type: (str, str, dict, dict, list, str) -> str
+def markdown_refs_to_latex(content, original_md_content, labels, errors, template):
+    # type: (str, str, Dict[str, Dict[str, str]], list, str) -> str
     citation_mos = list(REGEX_CITATION.finditer(content))
     for c, citation_mo in enumerate(reversed(citation_mos)):
         start, end = citation_mo.span()
         citation = content[start:end]
+
+        if '@' in citation:  # <chrisbcarl@outlook.com> is not a citation haha
+            continue
 
         mo2 = REGEX_CITATION_FULL.match(citation)
         if not mo2:
@@ -640,25 +680,29 @@ def markdown_refs_to_latex(content, original_md_content, all_labels_lowcase, int
             citation_mo = mo2
         groups = citation_mo.groupdict()
         original_ref = groups.get('ref', '')
-        ref = all_labels_lowcase.get(original_ref.lower())
+        ref_dict = labels.get(original_ref.lower())
 
-        if not ref:
+        if not ref_dict:
             errors.append(f'ref {original_ref!r} not found in bibilography or interdoc!')
             return ''
 
-        chapter = groups.get('chapter', '')
-        section_or_pages_or_timestamp = groups.get('section_or_pages_or_timestamp', '')
-        pages_or_timestamp = groups.get('pages_or_timestamp', '')
+        ref_section = ref_dict['section']
+        ref = ref_dict['label']
 
-        if ref in interdoc_label_types:
+        if ref_section != 'bib':
             cite_command = '~\\ref'
-            if interdoc_label_types[ref] == 'latex':
+            if ref_section == 'latex':
                 cite_command = '~\\eqref'
         else:
             if template in ['chicago', 'math']:
                 cite_command = '\\autocite'
             else:
                 cite_command = '\\cite'
+
+        chapter = groups.get('chapter', '')
+        section_or_pages_or_timestamp = groups.get('section_or_pages_or_timestamp', '')
+        pages_or_timestamp = groups.get('pages_or_timestamp', '')
+
         if not pages_or_timestamp:
             # \autocite{marx}
             replacement = f'{cite_command}{{{ref}}}'
@@ -687,35 +731,42 @@ def markdown_refs_to_latex(content, original_md_content, all_labels_lowcase, int
     return content
 
 
-def doclets_to_latex(doclets, md_filepath, all_labels_lowcase, interdoc_label_types, template):
-    # type: (List[Doclet], str, Dict[str, str], Dict[str, str], str) -> Tuple[List[str], List[str], List[str], List[str]]
+def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels, template):
+    # type: (List[Doclet], str, str, Dict[str, Dict[str, str]], str) -> Tuple[Dict[str, str], Dict[str, str], List[str], List[str]]
     '''
     Description:
         doclets to latexified body and appendix body
     Returns
-        Tuple[List[str], List[str], List[str], List[str]]
-            body, appendix_body, errors, warnings
+        Tuple[Dict[str, str], Dict[str, str], List[str], List[str]]
+            headers, renders, errors, warnings
     '''
     # render time
-    # {'quote', 'table', 'latex', 'literal', 'code', 'header', 'any', 'img', 'list'}
+    # {'quote', 'table', 'latex', 'literal', 'comment', 'yaml', 'code', 'header', 'any', 'img', 'list'}
+    headers, renders = {}, {}
     body, appendix_body = [], []
     errors, warnings = [], []
     original_md_content = read_text_file(md_filepath)
+    md_relpath = os.path.relpath(md_filepath, os.getcwd())
 
     appendix = False
     append_appendix = False
-    # prev_section = ''
     for doclet in doclets:
         section, content, label, caption, data = (doclet.section, doclet.content, doclet.label, doclet.caption, doclet.data)
         if section in set(['yaml']):
-            continue  # will be analyzed later
+            if not headers:
+                headers, renders = markdown_header_to_render_dict(content, bibliography_output_filepath, template=template)
+                template = headers['template']  # gets overriden if default
+            else:
+                lineno = list(find_lineno_index(doclet.content, original_md_content))[0][0]
+                warnings.append(f'multiple yamls detected at "{md_relpath}", lineno {lineno}! NOT PROCESSING AS HEADER')
+            continue
 
         if doclet.appendix is True:
             appendix = True
 
         if caption:
             # are there refs IN THE CAPTION?
-            caption = markdown_refs_to_latex(caption, original_md_content, all_labels_lowcase, interdoc_label_types, errors, template=template)
+            caption = markdown_refs_to_latex(caption, original_md_content, labels, errors, template=template)
 
         # TODO: auto Fig. Table. Code. etc.
         if section in set(['comment']):
@@ -795,8 +846,13 @@ def doclets_to_latex(doclets, md_filepath, all_labels_lowcase, interdoc_label_ty
                 content = postcontent
 
         # are there refs IN THE CONTENT?
-        if section not in set(['code', 'literal']):
-            content = markdown_refs_to_latex(content, original_md_content, all_labels_lowcase, interdoc_label_types, errors, template=template)
+        if section in set(['code', 'literal', 'math']):
+            mo = REGEX_CITATION.search(content)
+            if mo:
+                lineno = list(find_lineno_index(content[mo.start():mo.end()], original_md_content))[0][0]
+                errors.append(f'illegal citation placement in {section!r} at "{md_relpath}", lineno {lineno}!')
+        else:
+            content = markdown_refs_to_latex(content, original_md_content, labels, errors, template=template)
         if section in set(['any']):
             content = latex.latex_escape(content)
 
@@ -812,30 +868,35 @@ def doclets_to_latex(doclets, md_filepath, all_labels_lowcase, interdoc_label_ty
             appendix_body.append(content)
         else:
             body.append(content)
-        prev_section = section
 
-    return body, appendix_body, errors, warnings
+    renders['<BODY>'] = ''.join(body)
+    renders['<APPENDIX>'] = ''.join(appendix_body)
+
+    return headers, renders, errors, warnings
 
 
 def markdown_header_to_render_dict(text, bibliography_filepath, template):
-    # type: (str, str, str) -> dict
+    # type: (str, str, str) -> Tuple[Dict[str, str], Dict[str, str]]
     bibliography_filepath = bibliography_filepath.replace('\\', '/')
 
-    header = yaml.load(text, Loader=yaml.Loader)
+    headers = yaml.load(text, Loader=yaml.Loader)
 
-    header_title = header.get('title', 'Untitled').strip()
-    header_toc = header.get('toc', False)
-    header_doublespaced = header.get('doublespaced', False)
+    header_template = headers.get('template', 'default')
+    if template == 'default' and header_template != 'default':
+        LOGGER.info('replacing default template with header template %r', header_template)
+        template = header_template
+
+    header_title = headers.get('title', 'Untitled').strip()
+    header_toc = headers.get('toc', False)
+    header_doublespaced = headers.get('doublespaced', False)
     if template in ['math']:
         header_doublespaced = False  # hard low
-    header_date = header.get('date', datetime.datetime.now().strftime('%B %d, %Y'))
+    header_date = headers.get('date', datetime.datetime.now().strftime('%B %d, %Y'))
     default_margin = 'margin=1in'
-    header_geometry = header.get('geometry', default_margin)
-    if template in ['math']:
-        header_geometry = 'margin=1.5in' if header_geometry == default_margin else header_geometry
-    header_course = header.get('course', '')
-    header_abstract = header.get('abstract', '')
-    header_keywords_lst = [ele.strip() for ele in header.get('keywords', '').split(',')]
+    header_geometry = headers.get('geometry', 'margin=1.5in' if template in ['math'] else default_margin)
+    header_course = headers.get('course', '')
+    header_abstract = headers.get('abstract', '')
+    header_keywords_lst = [ele.strip() for ele in headers.get('keywords', '').split(',')]
     header_keywords_low = set()
     for ele in header_keywords_lst:
         if ele.lower() in header_keywords_low:
@@ -843,7 +904,7 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template):
         header_keywords_low.add(ele.lower())
     header_keywords = ', '.join(sorted(header_keywords_lst, key=lambda x: x.lower()))
     header_author_texts = ''
-    for header_author in header.get('authors', []):
+    for header_author in headers.get('authors', []):
         name = header_author.get('name', '').strip()
         email = header_author.get('email', '').strip()
         institution = header_author.get('institution', '').strip()
@@ -908,38 +969,24 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template):
     render_dict['<ABSTRACT>'] = header_abstract
     render_dict['<KEYWORDS>'] = header_keywords
 
-    return render_dict
+    return headers, render_dict
 
 
-def render_tex_file(doclets, md_filepath, template_filepath, bibliography_output_filepath, tex_output_filepath, template, body, appendix_body):
-    # type: (List[Doclet], str, str, str, str, str, List[str], List[str]) -> Tuple[List[str], List[str]]
-    original_md_content = read_text_file(md_filepath)
-    md_relpath = os.path.relpath(md_filepath, os.getcwd())
-
+def render_tex_file(headers, renders, tex_output_filepath):
+    # type: (Dict[str, str], Dict[str, str], str) -> Tuple[List[str], List[str]]
     errors, warnings = [], []
-    render_dict = {}
-    for doclet in doclets:
-        if doclet.section == 'yaml':
-            if render_dict:
-                lineno = list(find_lineno_index(doclet.content, original_md_content))[0][0]
-                warnings.append(f'multiple yamls detected at "{md_relpath}", lineno {lineno}!')
-            render_dict.update(markdown_header_to_render_dict(doclet.content, bibliography_output_filepath, template=template))
-    render_dict['<BODY>'] = ''.join(body)
-    render_dict['<APPENDIX>'] = ''.join(appendix_body)
+    template_filepath = TEMPLATES[headers['template']]
 
     with open(template_filepath, 'r', encoding='utf-8') as r:
         template_content = r.read()
 
     rendered_content = template_content[:]
-    for k, v in render_dict.items():
+    for k, v in renders.items():
         rendered_content = rendered_content.replace(k, v)
     rendered_content = re.sub(r'([^\n ]) {2,}', r'\g<1> ', rendered_content)
     rendered_content = re.sub(r'\n{3,},', '\n\n', rendered_content)
     write_text_file(tex_output_filepath, rendered_content)
     LOGGER.debug('wrote "%s"', tex_output_filepath)
-
-    # if debug:
-    # pprint.pprint(render_dict, indent=4, width=160)
 
     return errors, warnings
 

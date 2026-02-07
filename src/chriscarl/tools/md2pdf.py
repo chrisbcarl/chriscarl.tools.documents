@@ -71,7 +71,7 @@ def md2pdf(
     md_filepath,
     output_dirpath='',
     bibliography_filepaths=None,
-    template=md2latex_tool.DEFAULT_TEMPLATE,
+    template=md2latex.DEFAULT_TEMPLATE,
     wc=False,
     spellcheck_fatal=False,
     skip_spellcheck=False,
@@ -134,9 +134,9 @@ def main():
         skip_pdf=args.skip_pdf,
         debug=args.debug,
     )
-    LOGGER.info('.bib at "%s"', bibliography_output_filepath)
-    LOGGER.info('.tex at "%s"', tex_output_filepath)
-    LOGGER.info('.pdf at "%s"', pdf_output_filepath)
+    LOGGER.info('.bib at "%s"', os.path.relpath(bibliography_output_filepath, os.getcwd()))
+    LOGGER.info('.tex at "%s"', os.path.relpath(tex_output_filepath, os.getcwd()))
+    LOGGER.info('.pdf at "%s"', os.path.relpath(pdf_output_filepath, os.getcwd()))
     LOGGER.info('done!')
     return 0
 

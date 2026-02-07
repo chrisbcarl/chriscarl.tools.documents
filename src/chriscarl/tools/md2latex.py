@@ -71,7 +71,6 @@ from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, dirpath, filename, is_file
 from chriscarl.core.lib.stdlib.io import read_text_file
 from chriscarl.tools.shed import md2latex
-import chriscarl.files.manifest_documents as mand
 
 SCRIPT_RELPATH = 'chriscarl/tools/md2latex.py'
 if not hasattr(sys, '_MEIPASS'):
@@ -90,13 +89,6 @@ DEFAULT_OUTPUT_DIRPATH = abspath(TEMP_DIRPATH, 'tools.md2latex')
 DEFAULT_LOG_FILEPATH = abspath(TEMP_DIRPATH, 'tools.md2latex.log')
 
 # tool constants
-TEMPLATES = {
-    'default': mand.FILEPATH_MD2LATEX_DEFAULT_TEMPLATE,
-    'chicago': mand.FILEPATH_MD2LATEX_CHICAGO_TEMPLATE,
-    'ieee': mand.FILEPATH_MD2LATEX_IEEE_TEMPLATE,
-    'math': mand.FILEPATH_MD2LATEX_CHICAGO_TEMPLATE,  # chicago with some hardcoding
-}
-DEFAULT_TEMPLATE = list(TEMPLATES)[0]
 
 
 @dataclass
@@ -107,7 +99,7 @@ class Arguments:
     markdown_filepath: str
     output_dirpath: str = ''
     bibliography_filepaths: List[str] = field(default_factory=lambda: [])
-    template: str = DEFAULT_TEMPLATE
+    template: str = md2latex.DEFAULT_TEMPLATE
     spellcheck_fatal: bool = False
     skip_spellcheck: bool = False
     # wc-applet
@@ -125,7 +117,7 @@ class Arguments:
         app.add_argument('markdown_filepath', type=str, help='.md?')
         app.add_argument('--bibliography-filepaths', '--bibliographys', '-b', type=str, nargs='+', default=[], help='.md w/ bibtexs?')
         app.add_argument('--output-dirpath', '-o', type=str, default='', help='save outputs to different dir than input?')
-        app.add_argument('--template', '-t', type=str, default=DEFAULT_TEMPLATE, choices=TEMPLATES, help='document style, really')
+        app.add_argument('--template', '-t', type=str, default=md2latex.DEFAULT_TEMPLATE, choices=md2latex.TEMPLATES, help='document style, really')
         app.add_argument('--spellcheck-fatal', '-sf', action='store_true', help='spellcheck fail is fatal')
         app.add_argument('--skip-spellcheck', '-ss', action='store_true', help='skip-spellcheck entirely')
 
@@ -182,15 +174,15 @@ def markdown_to_latex(
     md_filepath,
     output_dirpath='',
     bibliography_filepaths=None,
-    template=DEFAULT_TEMPLATE,
+    template=md2latex.DEFAULT_TEMPLATE,
     wc=False,
     spellcheck_fatal=False,
     skip_spellcheck=False,
     debug=False,
 ):
     # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool) -> Tuple[str, str, List[Tuple[str, str]]]
-    if template not in TEMPLATES:
-        raise ValueError(f'template {template!r} not in {list(TEMPLATES)}')
+    if template not in md2latex.TEMPLATES:
+        raise ValueError(f'template {template!r} not in {list(md2latex.TEMPLATES)}')
     md2latex.assert_executables_exist()
 
     md_dirpath = dirpath(md_filepath)
@@ -232,20 +224,12 @@ def markdown_to_latex(
     doclets, interdoc_labels, download_url_filepaths, errors, warnings = md2latex.sections_to_doclets(sections, md_filepath, output_dirpath)
     log_error_warnings(phase, errors, warnings)
 
-    all_labels_lowcase = {}  # low_case: CasEd
-    interdoc_label_types = {}
-    for k in bibtex_labels:
-        all_labels_lowcase[k.lower()] = k
-    for key, value in interdoc_labels.items():
-        if value.lower() in all_labels_lowcase:
-            errors.append(f'duplicate {key} label {value!r}')
-        all_labels_lowcase[key.lower()] = key
+    phase, errors, warnings = 'labels', [], []
+    LOGGER.info('running %r', phase)
+    labels, errors, warnings = md2latex.process_labels(bibtex_labels, interdoc_labels)
+    log_error_warnings(phase, errors, warnings)
     if debug:
-        pprint.pprint(interdoc_labels, indent=2, width=160)
-
-    # {'quote', 'table', 'latex', 'literal', 'comment', 'yaml', 'code', 'header', 'any', 'img', 'list'}
-    if debug:
-        LOGGER.debug('sections: %s', [doc.section for doc in doclets])
+        LOGGER.debug('labels: %s', pprint.pformat(labels, indent=2, width=160))
 
     # spellcheck
     phase, errors, warnings = 'doclets2spellcheck', [], []
@@ -263,12 +247,16 @@ def markdown_to_latex(
     # doclets to body
     phase, errors, warnings = 'doclets2latex', [], []
     LOGGER.info('running %r', phase)
-    body, appendix_body, errors, warnings = md2latex.doclets_to_latex(doclets, md_filepath, all_labels_lowcase, interdoc_label_types, template)
+    headers, renders, errors, warnings = md2latex.doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels, template)
+    if debug:
+        LOGGER.debug('headers: %s', pprint.pformat(headers, indent=2, width=160))
+        LOGGER.debug('renders: %s', pprint.pformat(renders, indent=2, width=160))
     log_error_warnings(phase, errors, warnings)
 
+    # render
     phase, errors, warnings = 'doclets+latex2texfile', [], []
     LOGGER.info('running %r', phase)
-    errors, warnings = md2latex.render_tex_file(doclets, md_filepath, TEMPLATES[template], bibliography_output_filepath, tex_output_filepath, template, body, appendix_body)
+    errors, warnings = md2latex.render_tex_file(headers, renders, tex_output_filepath)
     log_error_warnings(phase, errors, warnings)
 
     return bibliography_output_filepath, tex_output_filepath, download_url_filepaths
@@ -293,8 +281,8 @@ def main():
         skip_spellcheck=args.skip_spellcheck,
         debug=args.debug,
     )
-    LOGGER.info('.bib at "%s"', bibliography_output_filepath)
-    LOGGER.info('.tex at "%s"', tex_output_filepath)
+    LOGGER.info('.bib at "%s"', os.path.relpath(bibliography_output_filepath, os.getcwd()))
+    LOGGER.info('.tex at "%s"', os.path.relpath(tex_output_filepath, os.getcwd()))
 
     LOGGER.info('done!')
     return 0

@@ -8,10 +8,10 @@ md2pdf
     bugs
 
         interref is being referred to through autocite but should instead be a ~ref...
-            md2pdf CMPE-180D\assignments\hw1\2026S-SJSU-CMPE180D-hw_1-chris_carl.md `
-                -b CMPE-180D\assignments\bibliography.md `
+            md2pdf CMPE-180D/assignments/hw1/2026S-SJSU-CMPE180D-hw_1-chris_carl.md `
+                -b CMPE-180D/assignments/bibliography.md `
                 -t math `
-                -o CMPE-180D\assignments\hw1\render -ss
+                -o CMPE-180D/assignments/hw1/render -ss
 
         emphasis analys can only happen AFTER literals have been processed.
         OR find some way to "attach" literals and other inliners to the previous element in the appended list.
