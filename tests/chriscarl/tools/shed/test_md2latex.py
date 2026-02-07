@@ -25,6 +25,7 @@ import unittest
 from chriscarl.core import constants
 from chriscarl.core.lib.stdlib.os import abspath
 from chriscarl.core.lib.stdlib.unittest import UnitTest
+from chriscarl.core.lib.stdlib.io import write_text_file
 
 # test imports
 import chriscarl.tools.shed.md2latex as lib
@@ -46,16 +47,7 @@ constants.fix_constants(lib)  # deal with namespace sharding the files across di
 class TestCase(UnitTest):
 
     def setUp(self):
-        return super().setUp()
-
-    def tearDown(self):
-        return super().tearDown()
-
-    @unittest.skip('lorem ipsum')
-    def test_case_0(self):
-        # TODO: deal with this.
-        CITATIONS_THAT_WORK = '''
-<arendt>
+        self.citations = '''<arendt>
 <patient4>
 <elon-extinct>
 <foucault, 198>
@@ -64,15 +56,44 @@ class TestCase(UnitTest):
 <alt-right, 10:40>
 <alt-right, 11:18-11:35>
 <marx, Estranged Labour XXIV, s10-12>
-<du-bois, CHAPTER II: THE SOULS OF WHITE FOLK, 29>
-'''
+<du-bois, CHAPTER II: THE SOULS OF WHITE FOLK, 29>'''
+        self.citations_md = abspath(self.tempdir, 'citations.md')
+        write_text_file(self.citations_md, self.citations)
+        return super().setUp()
+
+    def tearDown(self):
+        return super().tearDown()
+
+    # TODO: this isnt really testable... bit of an idictment of the software design and maintainability.
+    # # @unittest.skip('lorem ipsum')
+    # def test_case_0(self):
+    #     sections = lib.analyze_large_sections(self.citations)
+    #     doclets, interdoc_labels, download_url_filepaths, errors, warnings = lib.sections_to_doclets(
+    #         sections,
+    #         self.citations_md,
+    #         self.tempdir,
+    #     )
+    #     labels, errors, warnings = lib.process_labels({}, interdoc_labels)
+    #     headers, renders, errors, warnings = lib.doclets_to_latex(doclets, self.citations_md, abspath(self.tempdir, 'whateve.bib'), labels, 'default')
+
+    #     variables = [
+    #         (self.assertEqual, (len(self.citations_md.splitlines()), len(labels))),
+    #     ]
+    #     controls = [
+    #         True,
+    #     ]
+    #     self.assert_null_hypothesis(variables, controls)
+
+    def test_case_1(self):
         variables = [
-            (sum, [0, 1, 2, 3]),
-            (sum, [0, 1, 2, 3]),
+            (lib.process_labels, ({
+                'software-label': '''@software{software-label,
+  author   = "P. J. Cohen",
+}'''
+            }, {})),
         ]
         controls = [
-            6,
-            6,
+            ({}, ["label 'software-label' has unknown article type 'software'"], []),
         ]
         self.assert_null_hypothesis(variables, controls)
 
@@ -82,6 +103,7 @@ if __name__ == '__main__':
     tc.setUp()
 
     try:
-        tc.test_case_0()
+        # tc.test_case_0()
+        tc.test_case_1()
     finally:
         tc.tearDown()

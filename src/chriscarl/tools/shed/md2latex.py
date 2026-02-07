@@ -44,8 +44,7 @@ from chriscarl.core.lib.stdlib.urllib import download
 from chriscarl.core.lib.third.spellchecker import spellcheck
 from chriscarl.core.types.str import indent, dedent, find_lineno_index
 from chriscarl.core.functors.parse.str import unicode_replace
-from chriscarl.core.functors.parse import latex
-from chriscarl.core.functors.parse import markdown
+from chriscarl.core.functors.parse import latex, bibtex, markdown
 from chriscarl.files import manifest_documents as mand
 from chriscarl.tools import md2bibtex
 
@@ -132,7 +131,7 @@ REGEX_CITATION_WRONG = re.compile(r'\[([^\]]+)\]')
 REGEX_CITATION_PAGE = re.compile(r'<(?P<ref>[A-Za-z0-9\-_\.]+)(,\s+)?(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)?>')
 REGEX_CITATION_FULL = re.compile(
     # [du-bois, Chapter 4, s08]deleting previous work files
-    r'<(?P<ref>[A-Za-z0-9\-_\.]+)(,\s+)(?P<chapter>[A-Za-z0-9\-_\. ]+)(,\s+)(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)>'
+    r'<(?P<ref>[A-Za-z0-9\-_\.]+)(,\s+)(?P<chapter>[A-Za-z0-9\-_\. \:]+)(,\s+)?(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)?>'
 )
 REGEX_CITATION_INTERDOC_EQ = re.compile(r'(?P<pref>Eq\s*)?<eq-(?P<ref>[A-Za-z0-9\-_\.]+)>')
 REGEX_CITATION_INTERDOC_TBL = re.compile(r'(?P<pref>Table\s*)?<tbl-(?P<ref>[A-Za-z0-9\-_\.]+)>')
@@ -603,7 +602,14 @@ def process_labels(bibtex_labels, interdoc_labels):
     errors, warnings = [], []
     # labels storage {'original-label': {section='bib', label='Original-Label'}}
     labels = {}
-    for label in bibtex_labels:  # just the keys are the labels
+    for label, text in bibtex_labels.items():
+        mo = bibtex.REGEX_BIBTEX_CITATION_KEY.search(text)
+        if not mo:
+            raise RuntimeError()  # this cant happen
+        article_type = mo.groupdict()['type']
+        if article_type not in bibtex.BIBTEX_ARTICLES:
+            errors.append(f'label {label!r} has unknown article type {article_type!r}')
+            continue
         labels[label.lower()] = dict(section='bib', label=label)
 
     for label, section in interdoc_labels.items():

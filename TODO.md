@@ -5,22 +5,25 @@ pandoc wrapper
     too deeply nested is a lie.
 
 md2pdf
-    - bib ensure the types supported are actually supported "software" is not supported as a bib
+    - invocations that sfail:
+        md2pdf ISE-201\assignments\00-llm\paper-md2pdf.md `
+            -b ISE-201\assignments\00-llm\bibliography.md `
+            -o ISE-201\assignments\00-llm\render-2 -ss
+        md2pdf ISE-201\assignments\00-llm\paper.md `
+            -b ISE-201\assignments\00-llm\bibliography.md `
+            -o ISE-201\assignments\00-llm\render-2 -ss
+
     - make a paper-md that really covers every edge case
         - references INSIDE math doesn't really work... better to put it outside.
+        - ref in table still bad ISE-201/assignments/00-llm/render/paper-md2pdf.pdf
     - test elipses and cdots behavior
-    - ref in table still bad ISE-201/assignments/00-llm/render/paper-md2pdf.pdf
     - "ted to cross-reference whether" was picked up as a ref somehow...
     - table doesnt get picked up if at end C:/Users/chris/OneDrive/_recent/SJSU_2026S/ISE-201/assignments/00-llm/paper-md2pdf.md
         - even IF you add some text at the bottom to clear up the above
         - moving "investigation-findings-tbl" stuff below that table causes massive problem
     - old table missing caption/label doesnt get mentioned
-    - errant prints
     - check research-aid-2 for leftovers
-    - find bibliography if close by
-    - md2pdf vs md2latex, NOT THE SAME
-    - default template doesnt work, figure something out import-wise...
-    - refactor
+    - default template doesnt work, figure something out package wise...
 
     bugs
 
@@ -41,7 +44,8 @@ md2pdf
             if the ref is "good enough", starts with, then its good enough regardless of non-alphanumeric, etc.
 
         add a cwd command maybe? everything relative to that then... makes finding bibs easier, etc.
-            OR autobib just crawls through every file and finds bibtexes... that would be fun.
+            - OR autobib just crawls through every file and finds bibtexes... that would be fun.
+            - find bibliography if close by
 
         allow label anywhere in the math regex
 
