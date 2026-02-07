@@ -37,7 +37,7 @@ import yaml
 # project imports
 from chriscarl.core.lib.stdlib.os import is_file, dirpath
 from chriscarl.core.lib.stdlib.subprocess import which
-from chriscarl.core.lib.stdlib.io import read_text_file_try, write_text_file
+from chriscarl.core.lib.stdlib.io import read_text_file, write_text_file
 from chriscarl.core.lib.stdlib.urllib import download
 from chriscarl.core.lib.third.spellchecker import spellcheck
 from chriscarl.core.types.str import indent, dedent, find_lineno_index
@@ -214,7 +214,7 @@ def get_word_count(text):
 def word_count(filepath_or_content):
     # type: (str) -> int
     if is_file(filepath_or_content):
-        content = read_text_file_try(filepath_or_content)
+        content = read_text_file(filepath_or_content)
     else:
         content = filepath_or_content
     words = get_words_only(content)
@@ -386,7 +386,7 @@ def sections_to_doclets(sections, md_filepath, output_dirpath):
         Tuple[List[Doclet], Dict[str, str], List[str], List[str], List[str]]
             doclets, interdoc_labels, download_url_filepaths, errors, warnings
     '''
-    original_md_content = read_text_file_try(md_filepath)
+    original_md_content = read_text_file(md_filepath)
     md_relpath = os.path.relpath(md_filepath, os.getcwd())
     md_dirpath = pathlib.Path(dirpath(md_filepath))
     output_dirpath_pl = pathlib.Path(output_dirpath)
@@ -591,7 +591,7 @@ def doclets_spellcheck(doclets, md_filepath):
             errors, warnings
     '''
     errors, warnings = [], []
-    original_md_content = read_text_file_try(md_filepath)
+    original_md_content = read_text_file(md_filepath)
 
     spellcheckable_sections = set(['header', 'any', 'list'])
     spellcheckable_words = ''
@@ -700,7 +700,7 @@ def doclets_to_latex(doclets, md_filepath, all_labels_lowcase, interdoc_label_ty
     # {'quote', 'table', 'latex', 'literal', 'code', 'header', 'any', 'img', 'list'}
     body, appendix_body = [], []
     errors, warnings = [], []
-    original_md_content = read_text_file_try(md_filepath)
+    original_md_content = read_text_file(md_filepath)
 
     appendix = False
     append_appendix = False
@@ -913,7 +913,7 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template):
 
 def render_tex_file(doclets, md_filepath, template_filepath, bibliography_output_filepath, tex_output_filepath, template, body, appendix_body):
     # type: (List[Doclet], str, str, str, str, str, List[str], List[str]) -> Tuple[List[str], List[str]]
-    original_md_content = read_text_file_try(md_filepath)
+    original_md_content = read_text_file(md_filepath)
     md_relpath = os.path.relpath(md_filepath, os.getcwd())
 
     errors, warnings = [], []

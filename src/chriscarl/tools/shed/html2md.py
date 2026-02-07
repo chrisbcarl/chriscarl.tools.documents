@@ -25,7 +25,7 @@ from typing import Union
 import markdownify
 
 # project imports
-from chriscarl.core.lib.stdlib.io import read_text_file_try
+from chriscarl.core.lib.stdlib.io import read_text_file
 from chriscarl.core.lib.stdlib.os import is_file
 
 SCRIPT_RELPATH = 'chriscarl/tools/shed/html2md.py'
@@ -43,7 +43,7 @@ LOGGER.addHandler(logging.NullHandler())
 def html_to_markdown(html_or_str):
     # type: (str) -> str
     if is_file(html_or_str):
-        html_or_str = read_text_file_try(html_or_str)
+        html_or_str = read_text_file(html_or_str)
 
     text = markdownify.markdownify(
         html_or_str,

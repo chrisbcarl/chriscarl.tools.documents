@@ -35,7 +35,7 @@ import json
 from chriscarl.core.constants import TEMP_DIRPATH
 from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
-from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, filename
+from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, filename, is_file
 from chriscarl.core.lib.stdlib.io import write_text_file
 from chriscarl.core.functors.parse import bibtex
 from chriscarl.tools.shed import md2bibtex
@@ -97,6 +97,9 @@ class Arguments:
         return parser
 
     def process(self):
+        for i, input_filepath in enumerate(self.input_filepaths):
+            if not is_file(input_filepath):
+                raise OSError(f'input filepath {i} "{input_filepath}" does not exist')
         make_dirpath(self.output_dirpath)
         if self.debug:
             self.log_level = 'DEBUG'
@@ -132,6 +135,7 @@ def combine(input_filepaths, output_filepath, pretty=True, indent=4):
     for i, input_filepath in enumerate(input_filepaths):
         LOGGER.info('%d / %d - "%s" parsing', i + 1, len(input_filepaths), input_filepath)
         bib, _ = md2bibtex.text_to_bibtex(input_filepath, pretty=pretty, indent=indent)
+        LOGGER.debug('"%s"\n%s', input_filepath, bib)
         bibs.append(bib)
 
     bib = '\n'.join(bibs)

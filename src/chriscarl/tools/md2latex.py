@@ -68,8 +68,8 @@ import pprint
 from chriscarl.core.constants import TEMP_DIRPATH
 from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
-from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, dirpath, filename
-from chriscarl.core.lib.stdlib.io import read_text_file_try
+from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, dirpath, filename, is_file
+from chriscarl.core.lib.stdlib.io import read_text_file
 from chriscarl.tools.shed import md2latex
 import chriscarl.files.manifest_documents as mand
 
@@ -139,6 +139,11 @@ class Arguments:
         return parser
 
     def process(self):
+        if not is_file(self.markdown_filepath):
+            raise OSError(f'markdown filepath "{self.markdown_filepath}" does not exist')
+        for i, bibliography_filepath in enumerate(self.bibliography_filepaths):
+            if not is_file(bibliography_filepath):
+                raise OSError(f'bibliography filepath {i} "{bibliography_filepath}" does not exist')
         if self.output_dirpath:
             make_dirpath(self.output_dirpath)
         if self.debug:
@@ -199,7 +204,7 @@ def markdown_to_latex(
     bibliography_filepaths = bibliography_filepaths or []
 
     # right off the rip
-    md_content = read_text_file_try(md_filepath)
+    md_content = read_text_file(md_filepath)
     if not md_content.endswith('\n'):
         md_content = f'{md_content}\n'
     md_content = md2latex.REGEX_MARKDOWN_EMPTY_LITERAL.sub('', md_content)

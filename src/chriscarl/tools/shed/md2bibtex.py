@@ -28,7 +28,7 @@ from typing import Tuple, Dict
 
 # project imports
 from chriscarl.core.lib.stdlib.os import is_file
-from chriscarl.core.lib.stdlib.io import read_text_file_try
+from chriscarl.core.lib.stdlib.io import read_text_file
 from chriscarl.core.functors.parse import bibtex
 from chriscarl.core.functors.parse import latex
 
@@ -58,7 +58,7 @@ def text_to_bibtex(text, pretty=True, indent=4):
             str - non-bibtex content
     '''
     if is_file(text):
-        text = read_text_file_try(text)
+        text = read_text_file(text)
 
     bibtex_content, non_bibtex_content = bibtex.extract_from_and_remove(text, pretty=pretty, indent=indent)
 

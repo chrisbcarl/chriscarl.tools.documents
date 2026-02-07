@@ -42,7 +42,7 @@ except ImportError:
 from chriscarl.core.constants import TEMP_DIRPATH
 from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
-from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, dirpath, as_posix
+from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, dirpath, as_posix, is_file
 from chriscarl.core.lib.stdlib.io import read_text_file, write_text_file
 import chriscarl.files.manifest_documents as mand
 from chriscarl.core.lib.stdlib.subprocess import run
@@ -93,6 +93,8 @@ class Arguments:
         return parser
 
     def process(self):
+        if not is_file(self.input_filepath):
+            raise OSError(f'input filepath "{self.input_filepath}" does not exist')
         make_dirpath(dirpath(self.output_filepath))
         if self.debug:
             self.log_level = 'DEBUG'

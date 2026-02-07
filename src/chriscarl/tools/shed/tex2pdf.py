@@ -24,7 +24,7 @@ import tempfile
 # third party imports
 
 # project imports
-from chriscarl.core.lib.stdlib.io import read_text_file_try
+from chriscarl.core.lib.stdlib.io import read_text_file
 from chriscarl.core.lib.stdlib.subprocess import kill
 from chriscarl.tools.shed import md2latex
 
@@ -74,7 +74,7 @@ def run_pdflatex(md_filename, output_dirpath, template):
                 sys.exit(res)
         except subprocess.TimeoutExpired:
             kill(pid)
-            LOGGER.error('%d / %d - %s, TIMEOUT %0.2f sec!\n%s', c + 1, len(cmds), subprocess.list2cmdline(cmd), timeout, read_text_file_try(stdout))
+            LOGGER.error('%d / %d - %s, TIMEOUT %0.2f sec!\n%s', c + 1, len(cmds), subprocess.list2cmdline(cmd), timeout, read_text_file(stdout))
             sys.exit(2)
         finally:
             os.remove(stdout)
