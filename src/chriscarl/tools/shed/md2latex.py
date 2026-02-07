@@ -23,9 +23,7 @@ import os
 import sys
 import logging
 import dataclasses
-import subprocess
 import datetime
-import tempfile
 import pathlib
 import shutil
 import string
@@ -41,12 +39,10 @@ from chriscarl.core.lib.stdlib.os import is_file, dirpath
 from chriscarl.core.lib.stdlib.subprocess import which
 from chriscarl.core.lib.stdlib.io import read_text_file_try, write_text_file
 from chriscarl.core.lib.stdlib.urllib import download
-from chriscarl.core.lib.stdlib.subprocess import kill
 from chriscarl.core.lib.third.spellchecker import spellcheck
 from chriscarl.core.types.str import indent, dedent, find_lineno_index
 from chriscarl.core.functors.parse.str import unicode_replace
 from chriscarl.core.functors.parse import latex
-from chriscarl.core.functors.parse import bibtex
 from chriscarl.core.functors.parse import markdown
 from chriscarl.tools import md2bibtex
 
@@ -963,43 +959,3 @@ def download_copy_files(url_filepaths, output_dirpath):
             except Exception as exe:
                 errors.append(f'bad url {url}, resulted in {exe}')
     return errors, warnings
-
-
-def run_pdflatex(md_filename, output_dirpath, template):
-    # run pdflatex 4 times...
-    LOGGER.warning('deleting previous work files...')
-    delete_latex_work_files(output_dirpath, md_filename)
-
-    if template == 'ieee':
-        bibtex_cmd = 'bibtex'
-    else:
-        bibtex_cmd = 'biber'
-    cmds = [
-        # ['latexmk', '-C'],  # clean all aux files
-        ['pdflatex', md_filename],
-        [bibtex_cmd, md_filename],
-        ['pdflatex', md_filename],
-        ['pdflatex', md_filename],
-    ]
-    timeout = 60
-    for c, cmd in enumerate(cmds):
-        pid = -1
-        fd, stdout = tempfile.mkstemp()
-        os.close(fd)
-        try:
-            LOGGER.info('%d / %d - %s', c + 1, len(cmds), subprocess.list2cmdline(cmd))
-            with open(stdout, 'w', encoding='utf-8') as w:
-                p = subprocess.Popen(cmd, cwd=output_dirpath, stdout=w, stderr=w, universal_newlines=True)
-                pid = p.pid
-                res = p.wait(timeout=timeout)  # NOTE: biber can actually take like 20 seconds or so
-            if res != 0:
-                with open(stdout, 'r', encoding='utf-8') as r:
-                    print(r.read())
-                LOGGER.error('%d / %d - %s, ERROR!', c + 1, len(cmds), subprocess.list2cmdline(cmd))
-                sys.exit(res)
-        except subprocess.TimeoutExpired:
-            kill(pid)
-            LOGGER.error('%d / %d - %s, TIMEOUT %0.2f sec!\n%s', c + 1, len(cmds), subprocess.list2cmdline(cmd), timeout, read_text_file_try(stdout))
-            sys.exit(2)
-        finally:
-            os.remove(stdout)

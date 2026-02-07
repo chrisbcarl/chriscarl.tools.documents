@@ -27,12 +27,12 @@ Updates:
     2025-12-21 16:01 - paper - started
 
 Examples:
-    md2latex tests/collateral/md2latex/paper.md `
+    md2pdf tests/collateral/md2latex/paper.md `
         -b tests/collateral/md2latex/bibliography.md `
         -o files/examples/md2latex/ieee -t ieee -sf
         -ss  # skip spellcheck
 
-    md2latex tests/collateral/md2latex/paper.md `
+    md2pdf tests/collateral/md2latex/paper.md `
         -b tests/collateral/md2latex/bibliography.md `
         -o files/examples/md2latex/chicago -t chicago -sf
         -ss  # skip spellcheck

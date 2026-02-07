@@ -61,7 +61,6 @@ from typing import List, Generator, Optional, Tuple
 from dataclasses import dataclass, field
 from argparse import ArgumentParser
 import pprint
-import json
 
 # third party imports
 
@@ -70,11 +69,8 @@ from chriscarl.core.constants import TEMP_DIRPATH
 from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, dirpath, filename
-from chriscarl.core.lib.stdlib.io import read_text_file_try, write_text_file
+from chriscarl.core.lib.stdlib.io import read_text_file_try
 from chriscarl.tools.shed import md2latex
-from chriscarl.core.functors.parse import latex
-from chriscarl.core.functors.parse import bibtex
-from chriscarl.core.functors.parse import markdown
 import chriscarl.files.manifest_documents as mand
 
 SCRIPT_RELPATH = 'chriscarl/tools/md2latex.py'
@@ -114,7 +110,6 @@ class Arguments:
     template: str = DEFAULT_TEMPLATE
     spellcheck_fatal: bool = False
     skip_spellcheck: bool = False
-    skip_pdf: bool = False
     # wc-applet
     word_count: bool = False
     # non-app
@@ -122,20 +117,19 @@ class Arguments:
     log_level: str = 'INFO'
     log_filepath: str = DEFAULT_LOG_FILEPATH
 
-    @staticmethod
-    def argparser():
+    @classmethod
+    def argparser(cls):
         # type: () -> ArgumentParser
         parser = ArgumentParser(prog=SCRIPT_NAME, description=__doc__, formatter_class=ArgparseNiceFormat)
-        app = parser.add_argument_group('main applet')
+        app = parser.add_argument_group('md2latex')
         app.add_argument('markdown_filepath', type=str, help='.md?')
         app.add_argument('--bibliography-filepaths', '--bibliographys', '-b', type=str, nargs='+', default=[], help='.md w/ bibtexs?')
         app.add_argument('--output-dirpath', '-o', type=str, default='', help='save outputs to different dir than input?')
         app.add_argument('--template', '-t', type=str, default=DEFAULT_TEMPLATE, choices=TEMPLATES, help='document style, really')
         app.add_argument('--spellcheck-fatal', '-sf', action='store_true', help='spellcheck fail is fatal')
         app.add_argument('--skip-spellcheck', '-ss', action='store_true', help='skip-spellcheck entirely')
-        app.add_argument('--skip-pdf', '-sp', action='store_true', help='generate .tex only, no run pdf :(')
 
-        wc = parser.add_argument_group('word-count applet')
+        wc = parser.add_argument_group('word-count')
         wc.add_argument('--word-count', '-wc', action='store_true', help='get the word count, exit')
 
         misc = parser.add_argument_group('misc')
@@ -151,17 +145,17 @@ class Arguments:
             self.log_level = 'DEBUG'
         configure_ez(level=self.log_level, filepath=self.log_filepath)
 
-    @staticmethod
-    def parse(parser=None, argv=None):
+    @classmethod
+    def parse(cls, parser=None, argv=None):
         # type: (Optional[ArgumentParser], Optional[List[str]]) -> Arguments
-        parser = parser or Arguments.argparser()
+        parser = parser or cls.argparser()
         ns = parser.parse_args(argv)
-        arguments = Arguments(**(vars(ns)))
+        arguments = cls(**(vars(ns)))
         arguments.process()
         return arguments
 
 
-def md2latex_log_error_warnings(phase, errors, warnings):
+def log_error_warnings(phase, errors, warnings):
     # type: (str, List[str], List[str]) -> None
     if warnings:
         LOGGER.warning('%s - %d warnings!', phase, len(warnings))
@@ -187,14 +181,13 @@ def markdown_to_latex(
     wc=False,
     spellcheck_fatal=False,
     skip_spellcheck=False,
-    skip_pdf=False,
     debug=False,
 ):
-    # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool, bool) -> int
+    # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool) -> Tuple[str, str, List[Tuple[str, str]]]
     if template not in TEMPLATES:
         raise ValueError(f'template {template!r} not in {list(TEMPLATES)}')
+    md2latex.assert_executables_exist()
 
-    md_relpath = os.path.relpath(abspath(md_filepath), os.getcwd())
     md_dirpath = dirpath(md_filepath)
     md_filename = filename(md_filepath)
     if not output_dirpath:
@@ -203,7 +196,6 @@ def markdown_to_latex(
     os.makedirs(output_dirpath, exist_ok=True)
     tex_output_filepath = abspath(output_dirpath, f'{md_filename}.tex')
     bibliography_output_filepath = abspath(output_dirpath, f'{md_filename}.bib')  # latex.latex_remove(md_filename)
-    pdf_output_filepath = abspath(output_dirpath, f'{md_filename}.pdf')
     bibliography_filepaths = bibliography_filepaths or []
 
     # right off the rip
@@ -215,25 +207,25 @@ def markdown_to_latex(
     word_count = md2latex.word_count(md_content)
     LOGGER.info('wc: %d', word_count)
     if wc:
-        return 0
+        return '', '', []
 
     # bibliographies
     phase, errors, warnings = 'bibtex', [], []
     LOGGER.info('running %r', phase)
     bibtex_labels, errors, warnings = md2latex.bibliographies_to_bibtex([md_filepath] + bibliography_filepaths, bibliography_output_filepath)
-    md2latex_log_error_warnings(phase, errors, warnings)
+    log_error_warnings(phase, errors, warnings)
 
     # sections
     phase, errors, warnings = 'sections', [], []
     LOGGER.info('running %r', phase)
     sections = md2latex.analyze_large_sections(md_content)
-    md2latex_log_error_warnings(phase, errors, warnings)
+    log_error_warnings(phase, errors, warnings)
 
     # doclets
     phase, errors, warnings = 'sections2doclets', [], []
     LOGGER.info('running %r', phase)
     doclets, interdoc_labels, download_url_filepaths, errors, warnings = md2latex.sections_to_doclets(sections, md_filepath, output_dirpath)
-    md2latex_log_error_warnings(phase, errors, warnings)
+    log_error_warnings(phase, errors, warnings)
 
     all_labels_lowcase = {}  # low_case: CasEd
     interdoc_label_types = {}
@@ -261,43 +253,20 @@ def markdown_to_latex(
         if not spellcheck_fatal:
             warnings.extend(errors)
             errors.clear()
-            md2latex_log_error_warnings(phase, errors, warnings)
+            log_error_warnings(phase, errors, warnings)
 
     # doclets to body
     phase, errors, warnings = 'doclets2latex', [], []
     LOGGER.info('running %r', phase)
     body, appendix_body, errors, warnings = md2latex.doclets_to_latex(doclets, md_filepath, all_labels_lowcase, interdoc_label_types, template)
-    md2latex_log_error_warnings(phase, errors, warnings)
+    log_error_warnings(phase, errors, warnings)
 
     phase, errors, warnings = 'doclets+latex2texfile', [], []
     LOGGER.info('running %r', phase)
     errors, warnings = md2latex.render_tex_file(doclets, md_filepath, TEMPLATES[template], bibliography_output_filepath, tex_output_filepath, template, body, appendix_body)
-    md2latex_log_error_warnings(phase, errors, warnings)
+    log_error_warnings(phase, errors, warnings)
 
-    phase, errors, warnings = 'download', [], []
-    LOGGER.info('running %r', phase)
-    md2latex.download_copy_files(download_url_filepaths, output_dirpath)
-    md2latex_log_error_warnings(phase, errors, warnings)
-
-    phase, errors, warnings = 'tex2pdf', [], []
-    if skip_pdf:
-        LOGGER.warning('skipping %r', phase)
-        return 0
-    LOGGER.info('running %r', phase)
-    md2latex.run_pdflatex(md_filename, output_dirpath, template)
-    md2latex_log_error_warnings(phase, errors, warnings)
-
-    # NOTE: only clean up if everything went well, leave everything behind if it didnt...
-    LOGGER.info('deleting unnecessary work files...')
-    cleanup_filepaths = [tpl[1] for tpl in download_url_filepaths]
-    md2latex.delete_latex_work_files(output_dirpath, md_filename, extra=cleanup_filepaths)
-
-    LOGGER.info('.bib at "%s"', bibliography_output_filepath)
-    LOGGER.info('.tex at "%s"', tex_output_filepath)
-    LOGGER.info('.pdf at "%s"', pdf_output_filepath)
-
-    LOGGER.info('done!')
-    return 0
+    return bibliography_output_filepath, tex_output_filepath, download_url_filepaths
 
 
 def main():
@@ -308,9 +277,8 @@ def main():
         sys.exit(1)
 
     args = Arguments.parse(parser=parser)
-    md2latex.assert_executables_exist()
 
-    return markdown_to_latex(
+    bibliography_output_filepath, tex_output_filepath, _ = markdown_to_latex(
         args.markdown_filepath,
         args.output_dirpath,
         bibliography_filepaths=args.bibliography_filepaths,
@@ -318,9 +286,13 @@ def main():
         wc=args.word_count,
         spellcheck_fatal=args.spellcheck_fatal,
         skip_spellcheck=args.skip_spellcheck,
-        skip_pdf=args.skip_pdf,
         debug=args.debug,
     )
+    LOGGER.info('.bib at "%s"', bibliography_output_filepath)
+    LOGGER.info('.tex at "%s"', tex_output_filepath)
+
+    LOGGER.info('done!')
+    return 0
 
 
 if __name__ == '__main__':

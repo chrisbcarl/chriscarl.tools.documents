@@ -77,8 +77,8 @@ class Arguments:
     log_level: str = 'INFO'
     log_filepath: str = DEFAULT_LOG_FILEPATH
 
-    @staticmethod
-    def argparser():
+    @classmethod
+    def argparser(cls):
         # type: () -> ArgumentParser
         parser = ArgumentParser(prog=SCRIPT_NAME, description=__doc__, formatter_class=ArgparseNiceFormat)
         app = parser.add_argument_group('app')
@@ -102,8 +102,8 @@ class Arguments:
             self.log_level = 'DEBUG'
         configure_ez(level=self.log_level, filepath=self.log_filepath)
 
-    @staticmethod
-    def parse(parser=None, argv=None):
+    @classmethod
+    def parse(cls, parser=None, argv=None):
         # type: (Optional[ArgumentParser], Optional[List[str]]) -> Arguments
         parser = parser or Arguments.argparser()
         ns = parser.parse_args(argv)
