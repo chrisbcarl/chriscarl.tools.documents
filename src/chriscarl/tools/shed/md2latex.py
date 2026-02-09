@@ -10,6 +10,7 @@ tools.shed.md2latex is individual funcs that support the larger tool that COULD 
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-02-08 - tools.shed.md2latex - FIX: avoid printing squat-u '␣' character instead of spaces between strings
     2026-02-07 - tools.shed.md2latex - added process_labels, added template election in the yaml, overal refactor for params
     2026-02-06 - tools.shed.md2latex - refactor such that most of the functions are hosted here
     2026-02-04 - tools.shed.md2latex - list conversion edge cases
@@ -89,7 +90,7 @@ REGEX_MARKDOWN_CODE = re.compile(
     r'(?:caption: *)?(?P<caption>[^\n]+)?\n+?(?:label: *)?(?P<label>[^\n]+)?\n+?```(?P<language>[a-z\-\+\# ]+?)\n(?P<content>.*?)```', flags=re.DOTALL | re.MULTILINE
 )
 # NOTE: THIS ONE IS WEIRD, doing groups[content] will only give you the last quote, but it DOES pick all of them up...
-REGEX_MARKDOWN_QUOTE = re.compile(r'(?P<caption>(?:caption: *)[^\n]+(?:\n+))?(?P<label>(?:label: *)[^\n]+(?:\n+))?(?P<content>^>.*\n){2,}', flags=re.MULTILINE)
+REGEX_MARKDOWN_QUOTE = re.compile(r'(?P<caption>(?:caption: *)[^\n]+(?:\n+))?(?P<label>(?:label: *)[^\n]+(?:\n+))?(?P<content>^>.*\n){1,}', flags=re.MULTILINE)
 # NOTE: special unfortunately...
 # old - (?:[ \t\n]*(?:[\d+]\.|[-\*]+)\s*(?:.+)\n){2,}
 REGEX_MARKDOWN_LIST = re.compile(r'(?:^[ \t\n]*(?:[\d+]\. |[-\*]+) ?(?:.*)\n){1,}', flags=re.MULTILINE)
@@ -824,7 +825,8 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
             content = f'\\begin{{verbatim}}\n{content}\n\\end{{verbatim}}'
         elif section == 'code':
             language = data['language']
-            content = f'\\begin{{lstlisting}}[language={language.capitalize()}, caption={{{caption}}}, label={{{label}}}]\n{content}\n\\end{{lstlisting}}'
+            # FIX: avoid printing squat-u '␣' character instead of spaces between strings - https://tex.stackexchange.com/a/54185
+            content = f'\\begin{{lstlisting}}[language={language.capitalize()}, caption={{{caption}}}, label={{{label}}}, showstringspaces=false]\n{content.strip()}\n\\end{{lstlisting}}'
         elif section == 'table':
             rows = markdown.table_to_rows(content)
             content = latex.rows_to_latex(rows, caption=caption, label=label, aligned='left')
@@ -871,7 +873,7 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
         if content.count('\n') > 1:
             content = dedent(content).strip()
 
-        if section in ['latex', 'list', 'header']:
+        if section in ['latex', 'list', 'header', 'code']:
             content = f'\n\n{content}\n\n'
         if append_appendix:
             appendix_body.append(content)

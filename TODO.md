@@ -5,6 +5,11 @@ pandoc wrapper
     too deeply nested is a lie.
 
 md2pdf
+    - might be able to do the Table/Code thing by just searching for those occurances and confirming that 'Table ' is exactly before the citation match...
+    - code colors
+    - if there are tables or figures and theyre are NOT referenced, should error out. thats not a good thing.
+    - you're triggers spellcheck because i'm getting rid of all ' in words... maybe solution is to get rid of all ' words and append them in the end or something?
+    - a naked ^ in the middle of text is interpreted as math... or perhaps a 2^2 is but ^ naked isnt?
     - invocations that sfail:
         md2pdf ISE-201\assignments\00-llm\paper-md2pdf.md `
             -b ISE-201\assignments\00-llm\bibliography.md `
@@ -17,6 +22,8 @@ md2pdf
         - references INSIDE math doesn't really work... better to put it outside.
         - ref in table still bad ISE-201/assignments/00-llm/render/paper-md2pdf.pdf
     - test elipses and cdots behavior
+        - you may want to replace something different in the code or literal section...
+        - CMPE-180D\assignments\hw1\2026S-SJSU-CMPE180D-hw_1-chris_carl.md
     - "ted to cross-reference whether" was picked up as a ref somehow...
     - table doesnt get picked up if at end C:/Users/chris/OneDrive/_recent/SJSU_2026S/ISE-201/assignments/00-llm/paper-md2pdf.md
         - even IF you add some text at the bottom to clear up the above

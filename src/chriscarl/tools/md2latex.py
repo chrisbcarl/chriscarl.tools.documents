@@ -21,6 +21,7 @@ Examples:
         -ss  # skip spellcheck
 
 Updates:
+    2026-02-08 - tools.md2latex - FIX: spellcheck wasnt triggering on fatal, quotes picked up correctly now
     2026-02-06 - tools.md2latex - refactored for simplicity and readability, its much improved
     2026-02-04 - tools.md2latex - math template mode enabled, tested with a statistics submission, works, covered MANY edge cases.
     2026-02-01 - tools.md2latex - banged this refactor phase 1 out in about 8 hours. totally worth it.
@@ -219,7 +220,7 @@ def markdown_to_latex(
         if not spellcheck_fatal:
             warnings.extend(errors)
             errors.clear()
-            log_error_warnings(phase, errors, warnings)
+        log_error_warnings(phase, errors, warnings)
 
     # doclets to body
     phase, errors, warnings = 'doclets2latex', [], []

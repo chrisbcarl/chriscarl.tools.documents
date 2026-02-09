@@ -1,16 +1,3 @@
-Taylorism
-securitization
-SJSU
-edu
-ontologies
-Ascetism
-carceral
-incelibate
-manosphere
-alt-right
-Panopticon
-up-sold
-
 # weird-chars
 raison
 dêtre
@@ -29,6 +16,9 @@ landline
 quo
 bolded
 org
+natively
+ontologies
+carceral
 
 # academic/invented
 BibTex
@@ -38,6 +28,11 @@ datafication
 non-rival
 versioning
 succedent
+edu
+securitization
+Ascetism
+Panopticon
+Taylorism
 
 # programming
 basename
@@ -63,6 +58,9 @@ incel
 PsyOp
 Psy-Op
 reposting
+incelibate
+manosphere
+alt-right
 
 # figure out some way to conjugate
 grifter
@@ -77,3 +75,6 @@ themself
 utopic
 priori
 posteriori
+
+# misc / dont care
+up-sold

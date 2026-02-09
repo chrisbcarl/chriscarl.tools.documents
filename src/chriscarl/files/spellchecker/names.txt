@@ -6,5 +6,8 @@ Du Bois
 OpenAI
 McKinsey
 
+# places
+SJSU
+
 # products
 ChatGPT
