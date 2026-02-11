@@ -3,6 +3,7 @@ raison
 dêtre
 d'être
 naïve
+Résumé
 
 
 # should
@@ -19,6 +20,9 @@ org
 natively
 ontologies
 carceral
+entendre
+etc
+unrigorous
 
 # academic/invented
 BibTex
@@ -33,6 +37,9 @@ securitization
 Ascetism
 Panopticon
 Taylorism
+de-biasing
+non-linear
+telecom
 
 # programming
 basename
@@ -41,7 +48,6 @@ hyperlinked
 hyperlink
 newlines
 url
-XLNet
 def
 alt
 https
@@ -50,6 +56,8 @@ backticks
 Endian
 dword
 qword
+overfitting
+winograd
 
 # slang
 Influencers

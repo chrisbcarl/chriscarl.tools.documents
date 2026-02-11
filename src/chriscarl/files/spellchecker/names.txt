@@ -11,3 +11,5 @@ SJSU
 
 # products
 ChatGPT
+ImageNet
+XLNet

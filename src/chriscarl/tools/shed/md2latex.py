@@ -10,6 +10,7 @@ tools.shed.md2latex is individual funcs that support the larger tool that COULD 
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-02-10 - tools.shed.md2latex - BUG: html elements detected as citations from 'list' section
     2026-02-08 - tools.shed.md2latex - FIX: avoid printing squat-u '␣' character instead of spaces between strings
     2026-02-07 - tools.shed.md2latex - added process_labels, added template election in the yaml, overal refactor for params
     2026-02-06 - tools.shed.md2latex - refactor such that most of the functions are hosted here
@@ -158,6 +159,9 @@ REGEX_LATEX_LABEL = re.compile(r'%\s*?\\label\{(?P<label>[A-Za-z0-9\-_\.]+)\}')
 # BUG: content is not correctly captured, has to be massaged...
 REGEX_MARKDOWN_BIBLIOGRAPHY_SECTION = re.compile(r'\#+\s+(bibliography|references|citations)\n(?P<content>[^#].*\n)+(#+\s+[A-z])?', flags=re.IGNORECASE)
 REGEX_MARKDOWN_EMPTY_LITERAL = re.compile(r'```\s*```', flags=re.MULTILINE)
+
+# BUG: LIST CITATION
+REGEX_HTML_ELEMENT = re.compile(r'<[a-zA-Z-]+\s+(?P<key>(?:(?!href|src)\b)[A-Za-z\d_-]+)\s*=\s*["\'](?P<value>.*?)["\']\s*>')
 
 
 def get_words_only(text):
@@ -606,7 +610,7 @@ def process_labels(bibtex_labels, interdoc_labels):
     for label, text in bibtex_labels.items():
         mo = bibtex.REGEX_BIBTEX_CITATION_KEY.search(text)
         if not mo:
-            raise RuntimeError()  # this cant happen
+            raise RuntimeError('labels that could only have been in the bibliography found! make sure that is included!')  # this cant happen
         article_type = mo.groupdict()['type']
         if article_type not in bibtex.BIBTEX_ARTICLES:
             errors.append(f'label {label!r} has unknown article type {article_type!r}')
@@ -680,7 +684,14 @@ def markdown_refs_to_latex(content, original_md_content, labels, errors, templat
         if not mo2:
             mo3 = REGEX_CITATION_PAGE.match(citation)
             if not mo3:
-                lineno = list(find_lineno_index(citation, original_md_content))[0][0] + 1
+                # BUG: LIST CITATION
+                mo4 = REGEX_HTML_ELEMENT.match(citation)
+                if mo4:  # this is raw html...
+                    continue
+                try:
+                    lineno = list(find_lineno_index(citation, original_md_content))[0][0] + 1
+                except Exception:
+                    lineno = -1
                 raise RuntimeError(f'citation at lineno {lineno} is completely baffling to me: {citation!r}')
             citation_mo = mo3
         else:
@@ -888,7 +899,7 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
 
 def markdown_header_to_render_dict(text, bibliography_filepath, template):
     # type: (str, str, str) -> Tuple[Dict[str, str], Dict[str, str]]
-    bibliography_filepath = bibliography_filepath.replace('\\', '/')
+    bibliography_filepath = os.path.basename(bibliography_filepath).replace('\\', '/')
 
     headers = yaml.load(text, Loader=yaml.Loader)
 

@@ -31,6 +31,7 @@ from chriscarl.core.lib.stdlib.os import is_file
 from chriscarl.core.lib.stdlib.io import read_text_file
 from chriscarl.core.functors.parse import bibtex
 from chriscarl.core.functors.parse import latex
+from chriscarl.core.functors.parse.str import unicode_replace
 
 SCRIPT_RELPATH = 'chriscarl/tools/shed/md2bibtex.py'
 if not hasattr(sys, '_MEIPASS'):
@@ -61,6 +62,7 @@ def text_to_bibtex(text, pretty=True, indent=4):
         text = read_text_file(text)
 
     bibtex_content, non_bibtex_content = bibtex.extract_from_and_remove(text, pretty=pretty, indent=indent)
+    content = unicode_replace(bibtex_content)
 
     # this is tricky, you only want to analyze stuff INSIDE quotations marks and braces...
     fixed_bibtex_content = bibtex_content[:]  # deep copy

@@ -21,6 +21,7 @@ Examples:
         -ss  # skip spellcheck
 
 Updates:
+    2026-02-10 - tools.md2latex - FIX: template was not being passed along from md2latex to md2pdf
     2026-02-08 - tools.md2latex - FIX: spellcheck wasnt triggering on fatal, quotes picked up correctly now
     2026-02-06 - tools.md2latex - refactored for simplicity and readability, its much improved
     2026-02-04 - tools.md2latex - math template mode enabled, tested with a statistics submission, works, covered MANY edge cases.
@@ -35,7 +36,7 @@ from __future__ import absolute_import, print_function, division, with_statement
 import os
 import sys
 import logging
-from typing import List, Generator, Optional, Tuple
+from typing import List, Generator, Optional, Tuple, Dict
 from dataclasses import dataclass, field
 from argparse import ArgumentParser
 import pprint
@@ -48,6 +49,7 @@ from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, dirpath, filename, is_file
 from chriscarl.core.lib.stdlib.io import read_text_file
+from chriscarl.core.functors.parse import latex
 from chriscarl.tools.shed import md2latex
 
 SCRIPT_RELPATH = 'chriscarl/tools/md2latex.py'
@@ -158,7 +160,7 @@ def markdown_to_latex(
     skip_spellcheck=False,
     debug=False,
 ):
-    # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool) -> Tuple[str, str, List[Tuple[str, str]]]
+    # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool) -> Tuple[str, str, List[Tuple[str, str]], Dict[str, str]]
     if template not in md2latex.TEMPLATES:
         raise ValueError(f'template {template!r} not in {list(md2latex.TEMPLATES)}')
     md2latex.assert_executables_exist()
@@ -170,7 +172,7 @@ def markdown_to_latex(
     output_dirpath = abspath(output_dirpath)
     os.makedirs(output_dirpath, exist_ok=True)
     tex_output_filepath = abspath(output_dirpath, f'{md_filename}.tex')
-    bibliography_output_filepath = abspath(output_dirpath, f'{md_filename}.bib')  # latex.latex_remove(md_filename)
+    bibliography_output_filepath = abspath(output_dirpath, f'{md_filename}.bib')  # f'{latex.latex_remove(md_filename)}.bib'
     bibliography_filepaths = bibliography_filepaths or []
 
     # right off the rip
@@ -182,7 +184,7 @@ def markdown_to_latex(
     word_count = md2latex.word_count(md_content)
     LOGGER.info('wc: %d', word_count)
     if wc:
-        return '', '', []
+        return '', '', [], {}
 
     # bibliographies
     phase, errors, warnings = 'bibtex', [], []
@@ -237,7 +239,7 @@ def markdown_to_latex(
     errors, warnings = md2latex.render_tex_file(headers, renders, tex_output_filepath)
     log_error_warnings(phase, errors, warnings)
 
-    return bibliography_output_filepath, tex_output_filepath, download_url_filepaths
+    return bibliography_output_filepath, tex_output_filepath, download_url_filepaths, headers
 
 
 def main():
@@ -249,7 +251,7 @@ def main():
 
     args = Arguments.parse(parser=parser)
 
-    bibliography_output_filepath, tex_output_filepath, _ = markdown_to_latex(
+    bibliography_output_filepath, tex_output_filepath, _, _ = markdown_to_latex(
         args.markdown_filepath,
         args.output_dirpath,
         bibliography_filepaths=args.bibliography_filepaths,

@@ -1,0 +1,18 @@
+TY  - JOUR
+AU  - Rudolph, Rachel Etta
+AU  - Shech, Elay
+AU  - Tamir, Michael
+PY  - 2025
+DA  - 2025/07/01
+TI  - Bias, machine learning, and conceptual engineering
+JO  - Philosophical Studies
+SP  - 1889
+EP  - 1917
+VL  - 182
+IS  - 7
+AB  - Large language models (LLMs) such as OpenAI’s ChatGPT reflect, and can potentially perpetuate, social biases in language use. Conceptual engineering aims to revise our concepts to eliminate such bias. We show how machine learning and conceptual engineering can be fruitfully brought together to offer new insights to both conceptual engineers and LLM designers. Specifically, we suggest that LLMs can be used to detect and expose bias in the prototypes associated with concepts, and that LLM de-biasing can serve conceptual engineering projects that aim to revise such conceptual prototypes. At present, these de-biasing techniques primarily involve approaches requiring bespoke interventions based on choices of the algorithm’s designers. Thus, conceptual engineering through de-biasing will include making choices about what kind of normative training an LLM should receive, especially with respect to different notions of bias. This offers a new perspective on what conceptual engineering involves and how it can be implemented. And our conceptual engineering approach also offers insight, to those engaged in LLM de-biasing, into the normative distinctions that are needed for that work.
+SN  - 1573-0883
+UR  - https://doi.org/10.1007/s11098-024-02273-w
+DO  - 10.1007/s11098-024-02273-w
+ID  - Rudolph2025
+ER  - 

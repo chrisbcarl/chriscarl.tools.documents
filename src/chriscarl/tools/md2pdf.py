@@ -95,7 +95,7 @@ def md2pdf(
     debug=False,
 ):
     # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool, bool) -> Tuple[str, str, str]
-    bibliography_output_filepath, tex_output_filepath, download_url_filepaths = md2latex_tool.markdown_to_latex(
+    bibliography_output_filepath, tex_output_filepath, download_url_filepaths, headers = md2latex_tool.markdown_to_latex(
         md_filepath,
         output_dirpath,
         bibliography_filepaths=bibliography_filepaths,
@@ -114,6 +114,7 @@ def md2pdf(
     md2latex.download_copy_files(download_url_filepaths, output_dirpath)
     md2latex_tool.log_error_warnings(phase, errors, warnings)
 
+    template = headers.get('template', template)
     phase, errors, warnings = 'tex2pdf', [], []
     if skip_pdf:
         LOGGER.warning('skipping %r', phase)

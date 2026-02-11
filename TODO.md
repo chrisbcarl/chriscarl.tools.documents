@@ -4,7 +4,31 @@ pandoc wrapper
 
     too deeply nested is a lie.
 
+ipynb
+    test what kind of header the ipynb thinks for headers example:
+        "## 5) Trend : 'EV Prices Over Time'" -> "#5-trend--ev-prices-over-time"
+
+
+
 md2pdf
+    stick to whether the bibilography should be finelname or filepath....
+
+    BUG:
+        # BUG: LIST CITATION list is getting rendered as html..., then picked up as citations...
+            '<ol start="2">' is being picked up as a citation...
+
+    support bibtex with bad types like ARTICLE or Article -> article
+
+    if a reference is given like this <hello...>, only then autosearch, OR if the ref is outright missing, then attempt a diff that fits above a certain threshold.
+
+    RIS to bibtex
+        https://link.springer.com/article/10.1007/s11098-024-02273-w#citeas
+        - also looks like used in search terms... (SO (The accounting review.))AND(DT 2020)AND(TI how calibration committees can mitigate performance evaluation bias)
+        - https://research-ebsco-com.libaccess.sjlibrary.org/c/wm4vue/search/details/eycssiw2ej?db=bth&limiters=&q=%28SO%20%28The%20accounting%20review.%29%29AND%28DT%202020%29AND%28TI%20how%20calibration%20committees%20can%20mitigate%20performance%20evaluation%20bias%29
+
+    python C:\Users\chris\src\pgp-aiml\scripts\ipynb\ipynb-toc-export-execute-html.py `
+        ISE-201\assignments\02-ipynb-critique\2026S-SJSU-ISE201-hw_03-chris_carl.ipynb
+
     - might be able to do the Table/Code thing by just searching for those occurances and confirming that 'Table ' is exactly before the citation match...
     - code colors
     - if there are tables or figures and theyre are NOT referenced, should error out. thats not a good thing.
