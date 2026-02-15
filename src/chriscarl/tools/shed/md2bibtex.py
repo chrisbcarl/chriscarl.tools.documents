@@ -65,7 +65,7 @@ def text_to_bibtex(text, pretty=True, indent=4):
     content = unicode_replace(bibtex_content)
 
     # this is tricky, you only want to analyze stuff INSIDE quotations marks and braces...
-    fixed_bibtex_content = bibtex_content[:]  # deep copy
+    fixed_bibtex_content = content[:]  # deep copy
     bad_lines = []
 
     for mo in reversed(list(re.finditer(r'["{].*?[}"]', fixed_bibtex_content, flags=re.MULTILINE))):

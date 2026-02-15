@@ -48,7 +48,7 @@
 
 
 \title{Paper: Example}
-\date{February 07, 2026} % \today
+\date{February 14, 2026} % \today
 
 
 \author{
@@ -106,6 +106,8 @@ be sorted, later, list of terms, Some, unordered, will
 % -b tests/collateral/md2latex/bibliography.md `
 % -o files/examples/md2latex/chicago -t chicago -sf
 % -ss # skip spellcheck
+% -->% <!--will be extracted via tool
+% 
 % -->
 
 \section{Introduction}\label{Introduction}
@@ -120,7 +122,7 @@ Lets go over some basics.
 
 \subsection{Autocorrected}\label{Autocorrected}
 
-Double spaced words are auto-corrected to single space. ``Quotations" are adjusted accordingly, normally you'd need a `\lstinline{'} to get the opening quote, and a \lstinline{''} to get the closing. This is handled already. Apostrophe's are also handled.
+Double spaced words are auto-corrected to single space. ``Quotations" are adjusted accordingly, normally you'd need a backtick to get the opening quote, and a \lstinline{''} to get the closing. This is handled already. Apostrophe's are also handled.
 
 \subsection{Typesetting}\label{Typesetting}
 
@@ -134,7 +136,7 @@ If you want \textbf{\emph{bolded and italicized}}, use the six asterisks as norm
 
 Here's how I do basic citations with a bibliography.
 
-If you want a basic citation, just use \lstinline{<>} and include the \lstinline{BibTex} key \cite{CitekeyArticle}. If you want to add a page number, feel free to do so. \cite[p. 66]{Citekey-Inproceedings}. You can also add a range of page numbers like so: \cite[pp. 69-99]{CitekeyProceedings}. If you want to say section instead of page, use \cite[\S 69-99]{CitekeyBook}. Say you want to include a chapter title in the middle of the citation, go do it \cite[Some Chapter Inside, pp. 66-69]{CitekeyBooklet}.
+If you want a basic citation, just use \lstinline{<>} and include the \lstinline{BibTex} key \cite{Citekey-Inproceedings}. If you want to add a page number, feel free to do so. \cite[p. 66]{Citekey-Inproceedings}. You can also add a range of page numbers like so: \cite[pp. 69-99]{Citekey-Inproceedings}. If you want to say section instead of page, use \cite[\S 69-99]{Citekey-Inproceedings}. Say you want to include a chapter title in the middle of the citation, go do it \cite[Some Chapter Inside, pp. 66-69]{Citekey-Inproceedings}.
 
 \subsubsection{Advanced}\label{Advanced}
 
@@ -142,15 +144,7 @@ If you want a basic citation, just use \lstinline{<>} and include the \lstinline
 
 \paragraph{Inline Bibliography}\label{Inline-Bibliography}
 
-Include inline \(\BibTeX\) code so long as you create a heading with the title ``Bibliography", ``Citations", or ``References". Here is an example in literal text, but know that the Markdown document contained this exact text without the backticks and was swallowed up by the processing tool, and here is me referencing the Masters Thesis \cite{totally-new-citation}.% <!--will be extracted via tool
-% @techreport{totally-new-citation,
-% title = "Definitely",
-% author = "not",
-% institution = "Lorem",
-% year = 6969,
-% month = sep
-% }
-% -->
+Include inline \(\BibTeX\) code so long as you create a heading with the title ``Bibliography", ``Citations", or ``References". Here is an example in literal text, but know that the Markdown document contained this exact text without the backticks and was swallowed up by the processing tool, and here is me referencing the Masters Thesis \cite{totally-new-citation}.
 
 \paragraph{Figures}\label{Figures}
 
@@ -172,7 +166,7 @@ You can also reference other things inside the ``alt" description of the image, 
 
 You need to include packages \lstinline{amsmath,amssymb,amsfonts} if you want math.
 
-Inline math is supported like \(y = Ax + b\) as well as \(\forall x \in X\). Or you can make explicit equations like Eq ~\eqref{eq-rm-ilp} and Eq ~\eqref{eq-profit}.
+Inline math is supported like \(y = Ax + b\) as well as \(\forall x \in X\) . Or you can make explicit equations like Eq ~\eqref{eq-rm-ilp} and Eq ~\eqref{eq-profit}.
 
 \begin{equation}
 \label{eq-rm-ilp}
@@ -244,22 +238,30 @@ Numbers & Alphabet & variables & sum & multiplicat \\
 
 You need to include packages \lstinline{lstlistings} if you want code. In every case, you need to specify the caption, ref, and language. The caption and ref are custom, the language portion is normal.
 
-They can be cited using the code- prefix like Listing ~\ref{code-python}, Listing ~\ref{code-java}, Listing ~\ref{code-cpp}.\begin{lstlisting}[language=Python, caption={Listing with Python in it.}, label={code-python}]
+They can be cited using the code- prefix like Listing ~\ref{code-python}, Listing ~\ref{code-java}, Listing ~\ref{code-cpp}.
+
+\begin{lstlisting}[language=Python, caption={Listing with Python in it.}, label={code-python}, showstringspaces=false]
 def func():
     print('hello world')
 
 # Note how if you have a really really long comment or something that definitely goes over the column limit, it will be re-indented in an attempt to save itself.
 func()
+\end{lstlisting}
 
-\end{lstlisting}\begin{lstlisting}[language=Java, caption={Listing with Java in it.}, label={code-java}]
+
+
+\begin{lstlisting}[language=Java, caption={Listing with Java in it.}, label={code-java}, showstringspaces=false]
 public class Main {
     public static int main(String[] args) {
         System.out.println("hello world");
         return 0;
     }
 }
+\end{lstlisting}
 
-\end{lstlisting}\begin{lstlisting}[language=C++, caption={Listing with C++ in it.}, label={code-cpp}]
+
+
+\begin{lstlisting}[language=C++, caption={Listing with C++ in it.}, label={code-cpp}, showstringspaces=false]
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -268,8 +270,9 @@ int main(int argc, char** argv) {
     cout << "hello world" << endl;
     return 0;
 }
-
 \end{lstlisting}
+
+
 
 \paragraph{Interdoc Citations}\label{Interdoc-Citations}
 
@@ -369,7 +372,7 @@ Windy bitter use suddenly update down currently, nature hand actor. Lot better r
 
 \bibliographystyle{IEEEtran}
 % \bibliography{refs2}
-\bibliography{C:/Users/chris/src/chriscarl.tools.documents/files/examples/md2latex/ieee/paper.bib}
+\bibliography{paper.bib}
 
 
 

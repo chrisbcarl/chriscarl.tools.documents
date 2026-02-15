@@ -48,7 +48,7 @@ Clearly who two here society spoon computer tiny wet from me man. Valley mostly 
 Lets go over some basics.
 
 ## Autocorrected
-Double  spaced words  are auto-corrected to single space. "Quotations" are adjusted accordingly, normally you'd need a ``'` to get the opening quote, and a `''` to get the closing. This is handled already. Apostrophe's are also handled.
+Double  spaced words  are auto-corrected to single space. "Quotations" are adjusted accordingly, normally you'd need a backtick to get the opening quote, and a `''` to get the closing. This is handled already. Apostrophe's are also handled.
 
 ## Typesetting
 If you want *italicized*, use the two asterisks as normal.
@@ -61,7 +61,7 @@ If you want ***bolded and italicized***, use the six asterisks as normal.
 ## Citations
 Here's how I do basic citations with a bibliography.
 
-If you want a basic citation, just use `<>` and include the `BibTex` key <CitekeyArticle>. If you want to add a page number, feel free to do so. <Citekey-Inproceedings, 66>. You can also add a range of page numbers like so: <CitekeyProceedings, 69-99>. If you want to say section instead of page, use  <CitekeyBook, s69-99>. Say you want to include a chapter title in the middle of the citation, go do it <CitekeyBooklet, Some Chapter Inside, 66-69>.
+If you want a basic citation, just use `<>` and include the `BibTex` key <Citekey-Inproceedings>. If you want to add a page number, feel free to do so. <Citekey-Inproceedings, 66>. You can also add a range of page numbers like so: <Citekey-Inproceedings, 69-99>. If you want to say section instead of page, use  <Citekey-Inproceedings, s69-99>. Say you want to include a chapter title in the middle of the citation, go do it <Citekey-Inproceedings, Some Chapter Inside, 66-69>.
 
 ### Advanced
 

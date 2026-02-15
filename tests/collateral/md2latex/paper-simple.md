@@ -47,7 +47,7 @@ If you'd like to make a large section, feel free to type as normal underneath it
 
 URL [placeholdertext.org](https://placeholdertext.org/english-placeholder-text/) that should work
 
-"Quotations" are adjusted accordingly, normally you'd need a ``'` to get the opening quote, and a `''` to get the closing.
+"Quotations" are adjusted accordingly, normally you'd need a backtick to get the opening quote, and a `''` to get the closing.
 
 If you want *italicized*, use the two asterisks as normal.
 

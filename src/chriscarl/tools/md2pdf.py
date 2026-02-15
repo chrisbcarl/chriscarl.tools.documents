@@ -34,7 +34,7 @@ import os
 import sys
 import logging
 from typing import List, Generator, Optional, Tuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from argparse import ArgumentParser
 
 # third party imports
@@ -92,9 +92,10 @@ def md2pdf(
     spellcheck_fatal=False,
     skip_spellcheck=False,
     skip_pdf=False,
+    auto_label_caption=False,
     debug=False,
 ):
-    # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool, bool) -> Tuple[str, str, str]
+    # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool, bool, bool) -> Tuple[str, str, str]
     bibliography_output_filepath, tex_output_filepath, download_url_filepaths, headers = md2latex_tool.markdown_to_latex(
         md_filepath,
         output_dirpath,
@@ -103,6 +104,7 @@ def md2pdf(
         wc=wc,
         spellcheck_fatal=spellcheck_fatal,
         skip_spellcheck=skip_spellcheck,
+        auto_label_caption=auto_label_caption,
         debug=debug,
     )
 
@@ -149,6 +151,7 @@ def main():
         spellcheck_fatal=args.spellcheck_fatal,
         skip_spellcheck=args.skip_spellcheck,
         skip_pdf=args.skip_pdf,
+        auto_label_caption=args.auto_label_caption,
         debug=args.debug,
     )
     LOGGER.info('.bib at "%s"', os.path.relpath(bibliography_output_filepath, os.getcwd()))

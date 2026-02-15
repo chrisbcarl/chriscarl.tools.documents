@@ -24,6 +24,7 @@ entendre
 etc
 unrigorous
 
+
 # academic/invented
 BibTex
 LaTex
@@ -58,6 +59,7 @@ dword
 qword
 overfitting
 winograd
+backtick
 
 # slang
 Influencers

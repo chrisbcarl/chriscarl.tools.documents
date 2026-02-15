@@ -25,7 +25,7 @@ import os
 import sys
 import logging
 from typing import List, Generator, Optional, Dict, Tuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from argparse import ArgumentParser
 import json
 
@@ -113,6 +113,9 @@ class Arguments:
         arguments = Arguments(**(vars(ns)))
         arguments.process()
         return arguments
+
+    def to_dict(self):
+        return {fie.name: getattr(self, fie.name) for fie in fields(self)}
 
 
 def combine(input_filepaths, output_filepath, pretty=True, indent=4):

@@ -10,6 +10,9 @@ tools.shed.md2latex is individual funcs that support the larger tool that COULD 
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-02-15 - tools.shed.md2latex - added --auto-label-caption
+                                       latex-inline, literal-inline
+                                       FIX: html list and improved
     2026-02-10 - tools.shed.md2latex - BUG: html elements detected as citations from 'list' section
     2026-02-08 - tools.shed.md2latex - FIX: avoid printing squat-u '␣' character instead of spaces between strings
     2026-02-07 - tools.shed.md2latex - added process_labels, added template election in the yaml, overal refactor for params
@@ -32,6 +35,7 @@ import shutil
 import string
 import pprint
 import re
+from collections import OrderedDict
 from typing import Tuple, List, Optional, Dict
 
 # third party imports
@@ -84,6 +88,11 @@ def assert_executables_exist():
 REGEX_CAPTION_LABEL_COMMON = re.compile(r'(?P<caption>(?:caption: *)[^\n]+(?:\n+))?(?P<label>(?:label: *)[^\n]+(?:\n+))?', flags=re.DOTALL | re.MULTILINE)
 REGEX_HTML_COMMENT = re.compile(r'\<\!--(.*?)--\>', flags=re.DOTALL | re.MULTILINE)
 REGEX_MARKDOWN_YAML = re.compile(r'---\n(.*?)\n---', flags=re.DOTALL | re.MULTILINE)
+REGEX_EXTRACT_SECTIONS = OrderedDict([
+    ('comment', REGEX_HTML_COMMENT),
+    ('yaml', REGEX_MARKDOWN_YAML),
+])
+
 REGEX_MARKDOWN_TABLE = re.compile(r'(?:caption: *)?(?P<caption>[^\n]+)?\n+?(?:label: *)?(?P<label>[^\n]+)?\n+?\|(?P<content>.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
 REGEX_MARKDOWN_LATEX = re.compile(r'\$\$\n\s*(%?\\label\{)?(?P<label>[A-Za-z0-9\-_\.]+)?(\}\n)?(?P<content>.*?)\$\$', flags=re.DOTALL | re.MULTILINE)
 REGEX_MARKDOWN_MULTILINE_LITERAL = re.compile(r'```\n(?P<content>.*?)```', flags=re.DOTALL | re.MULTILINE)
@@ -96,26 +105,32 @@ REGEX_MARKDOWN_QUOTE = re.compile(r'(?P<caption>(?:caption: *)[^\n]+(?:\n+))?(?P
 # old - (?:[ \t\n]*(?:[\d+]\.|[-\*]+)\s*(?:.+)\n){2,}
 REGEX_MARKDOWN_LIST = re.compile(r'(?:^[ \t\n]*(?:[\d+]\. |[-\*]+) ?(?:.*)\n){1,}', flags=re.MULTILINE)
 
-REGEX_LARGE_SECTIONS = {
-    'comment': REGEX_HTML_COMMENT,
-    'yaml': REGEX_MARKDOWN_YAML,
-    # can have other stuff embedded
-    'table': REGEX_MARKDOWN_TABLE,
-    'latex': REGEX_MARKDOWN_LATEX,
-    'literal': REGEX_MARKDOWN_MULTILINE_LITERAL,
-    'code': REGEX_MARKDOWN_CODE,
-    'quote': REGEX_MARKDOWN_QUOTE,
-    'list': REGEX_MARKDOWN_LIST,
-    # implicit ('any': '')
-}
-
+REGEX_LARGE_SECTIONS = OrderedDict(
+    [
+        # can have other stuff embedded
+        ('table', REGEX_MARKDOWN_TABLE),
+        ('latex', REGEX_MARKDOWN_LATEX),
+        ('literal', REGEX_MARKDOWN_MULTILINE_LITERAL),
+        ('code', REGEX_MARKDOWN_CODE),
+        ('quote', REGEX_MARKDOWN_QUOTE),
+        ('list', REGEX_MARKDOWN_LIST),
+        # implicit ('any': '')
+    ]
+)
 REGEX_MARKDOWN_HEADER = re.compile(r'(?P<octothorps>#+) (?P<title>.+)')
 REGEX_MARKDOWN_IMG = re.compile(r'!\[(?P<alt>.*?)\]\((?P<path>.*?\))')
-
-REGEX_SMALL_SECTIONS = {
-    'header': REGEX_MARKDOWN_HEADER,
-    'img': REGEX_MARKDOWN_IMG,
-}
+REGEX_MARKDOWN_LITERAL_INLINE = re.compile(r'`(?P<content>[^`]*?)`')
+# TODO: I dont know what the non-capture group is doing...
+# REGEX_MARKDOWN_LATEX_INLINE = re.compile(r'(?:(?!\$\d[\d\.\,]+ \b))\$(?P<content>.+?)\$')  # , flags=re.DOTALL
+REGEX_MARKDOWN_LATEX_INLINE = re.compile(r'(\$|\\\()(?P<content>.*?)(\$|\\\))')  # , flags=re.DOTALL
+REGEX_SMALL_SECTIONS = OrderedDict(
+    [
+        ('header', REGEX_MARKDOWN_HEADER),
+        ('img', REGEX_MARKDOWN_IMG),
+        ('literal-inline', REGEX_MARKDOWN_LITERAL_INLINE),
+        ('latex-inline', REGEX_MARKDOWN_LATEX_INLINE),
+    ]
+)
 
 # https://www.freecodecamp.org/news/how-to-write-a-regular-expression-for-a-url/
 REGEX_URL = re.compile(
@@ -123,23 +138,22 @@ REGEX_URL = re.compile(
 )
 # REGEX_URL = re.compile(r'(https?:\/\/)[a-z0-9\-\_\.]{3,}\/?[A-Za-z0-9\-\_\.\/\?\=\&]*')
 REGEX_MARKDOWN_URL = re.compile(r'\[(?P<alt>.*?)\]\((?P<path>.*?\))')
-REGEX_MARKDOWN_LITERAL_INLINE = re.compile(r'`(?P<content>[^`]+)`')
-REGEX_MARKDOWN_LATEX_INLINE = re.compile(r'(?:(?!\$\d[\d\.\,]+ \b))\$(?P<content>.+?)\$')  # , flags=re.DOTALL
 
 REGEX_CITATION_CONTENT = re.compile(r'[A-Za-z0-9\-_\.]+')
 
-REGEX_CITATION = re.compile(r'<(?P<ref>[^>\n]+)>')
-REGEX_CITATION_WRONG = re.compile(r'\[([^\]]+)\]')
+REGEX_CITATION = re.compile(r'<(?P<ref>[^<>\n]+)>')
+REGEX_CITATION_WRONG = re.compile(r'\[([^\[\]]+)\]')
 REGEX_CITATION_PAGE = re.compile(r'<(?P<ref>[A-Za-z0-9\-_\.]+)(,\s+)?(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)?>')
 REGEX_CITATION_FULL = re.compile(
     # [du-bois, Chapter 4, s08]deleting previous work files
     r'<(?P<ref>[A-Za-z0-9\-_\.]+)(,\s+)(?P<chapter>[A-Za-z0-9\-_\. \:]+)(,\s+)?(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)?>'
 )
-REGEX_CITATION_INTERDOC_EQ = re.compile(r'(?P<pref>Eq\s*)?<eq-(?P<ref>[A-Za-z0-9\-_\.]+)>')
-REGEX_CITATION_INTERDOC_TBL = re.compile(r'(?P<pref>Table\s*)?<tbl-(?P<ref>[A-Za-z0-9\-_\.]+)>')
-REGEX_CITATION_INTERDOC_CODE = re.compile(r'(?P<pref>Listing\s*)?<code-(?P<ref>[A-Za-z0-9\-_\.]+)>')
-REGEX_CITATION_INTERDOC_HREF = re.compile(r'(?P<pref>Section\s*|Chapter\s*)?<href-(?P<ref>[A-Za-z0-9\-_\.]+)>')
-REGEX_CITATION_INTERDOC_FIG = re.compile(r'(?P<pref>Fig\.\s*)?<fig-(?P<ref>[^>]+?)>')
+# TODO: remove
+# REGEX_CITATION_INTERDOC_EQ = re.compile(r'(?P<pref>Eq\s*)?<eq-(?P<ref>[A-Za-z0-9\-_\.]+)>')
+# REGEX_CITATION_INTERDOC_TBL = re.compile(r'(?P<pref>Table\s*)?<tbl-(?P<ref>[A-Za-z0-9\-_\.]+)>')
+# REGEX_CITATION_INTERDOC_CODE = re.compile(r'(?P<pref>Listing\s*)?<code-(?P<ref>[A-Za-z0-9\-_\.]+)>')
+# REGEX_CITATION_INTERDOC_HREF = re.compile(r'(?P<pref>Section\s*|Chapter\s*)?<href-(?P<ref>[A-Za-z0-9\-_\.]+)>')
+# REGEX_CITATION_INTERDOC_FIG = re.compile(r'(?P<pref>Fig\.\s*)?<fig-(?P<ref>[^>]+?)>')
 
 # REGEX_MARKDOWN_TABLE = re.compile(r'\|(.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
 REGEX_SIC = re.compile(r'([\w])\[(sic)\]')
@@ -163,10 +177,28 @@ REGEX_MARKDOWN_EMPTY_LITERAL = re.compile(r'```\s*```', flags=re.MULTILINE)
 # BUG: LIST CITATION
 REGEX_HTML_ELEMENT = re.compile(r'<[a-zA-Z-]+\s+(?P<key>(?:(?!href|src)\b)[A-Za-z\d_-]+)\s*=\s*["\'](?P<value>.*?)["\']\s*>')
 
+SECTION_ABBREV = {
+    'table': ('Table', 'Tbl'),
+    'latex': ('Equation', 'Eq'),
+    'literal': ('Listing', 'Lit'),
+    'code': ('Code', 'Cd'),
+    'img': ('Figure', 'Fig'),
+    # doesnt really come up
+    'comment': ('Comment', 'Cmt'),
+    'yaml': ('YAML', 'YML'),
+    'quote': ('Quote', 'Qt'),
+    'list': ('List', 'Lst'),
+    'any': ('Any', 'Any'),
+    'literal-inline': ('Literal', 'Lit'),
+    'latex-inline': ('LaTeX', 'LaT'),
+}
+
 
 def get_words_only(text):
     # type: (str) -> str
     text = REGEX_SIC.sub(r'\g<1>', text)
+    for regex in REGEX_EXTRACT_SECTIONS.values():
+        text = regex.sub(' ', text)
     for regex in REGEX_LARGE_SECTIONS.values():
         text = regex.sub(' ', text)
     for regex in REGEX_SMALL_SECTIONS.values():
@@ -175,10 +207,17 @@ def get_words_only(text):
         REGEX_MARKDOWN_URL,
         REGEX_MARKDOWN_LITERAL_INLINE,
         #
-        REGEX_CITATION_INTERDOC_EQ,
-        REGEX_CITATION_INTERDOC_TBL,
-        REGEX_CITATION_INTERDOC_HREF,
-        REGEX_CITATION_INTERDOC_FIG,
+        # TODO: look into this if it makes sense
+        # ('table', REGEX_MARKDOWN_TABLE),
+        # ('latex', REGEX_MARKDOWN_LATEX),
+        # ('literal', REGEX_MARKDOWN_MULTILINE_LITERAL),
+        # ('code', REGEX_MARKDOWN_CODE),
+        # ('quote', REGEX_MARKDOWN_QUOTE),
+        # ('list', REGEX_MARKDOWN_LIST),
+        # REGEX_CITATION_INTERDOC_EQ,
+        # REGEX_CITATION_INTERDOC_TBL,
+        # REGEX_CITATION_INTERDOC_HREF,
+        # REGEX_CITATION_INTERDOC_FIG,
         REGEX_MARKDOWN_LATEX_INLINE,
         #
         REGEX_CITATION_WRONG,
@@ -239,8 +278,7 @@ def word_count(filepath_or_content):
 T_SECTION = Tuple[str, str, Optional[re.Match]]
 
 
-def analyze_sections(md_content, regex_dict):
-    # type: (str, Dict[str, re.Pattern]) -> List[T_SECTION]
+def analyze_sections(md_content, regex_dict, include_between=True):
     # find large sections then smaller sections and so on.
     sections = [
         # ('yaml', 'whatever', mo)
@@ -259,23 +297,37 @@ def analyze_sections(md_content, regex_dict):
                 content = md_content[:end]
                 sections.append((section, content, first_mo))
             else:
+                # include the in-between the matches as "any"
                 content = md_content[:start]
-                sections.append(('any', content, None))
+                if include_between:
+                    sections.append(('any', content, None))
                 content = md_content[start:end]
                 sections.append((section, content, first_mo))
             md_content = md_content[end:]
         else:
+            # dump the rest as "any"
             content = md_content
-            sections.append(('any', content, None))
+            if include_between:
+                sections.append(('any', content, None))
             md_content = ''
     return sections
 
 
+def analyze_extract_sections(md_content):
+    # type: (str) -> Tuple[List[T_SECTION], str]
+    sections = analyze_sections(md_content, REGEX_EXTRACT_SECTIONS, include_between=False)
+    for _, content, _ in reversed(sections):
+        md_content = md_content.replace(content, '')
+    return sections, md_content
+
+
 def analyze_large_sections(md_content):
+    # type: (str) -> List[T_SECTION]
     return analyze_sections(md_content, REGEX_LARGE_SECTIONS)
 
 
 def analyze_small_sections(md_content):
+    # type: (str) -> List[T_SECTION]
     return analyze_sections(md_content, REGEX_SMALL_SECTIONS)
 
 
@@ -296,7 +348,7 @@ def markdown_list_to_latex(content):
     latex_inline = {}
     for m, mo in enumerate(reversed(list(re.finditer(r'\\\(.+\\\)', content)))):
         start, end = mo.span()
-        key = f'/LATEX_INLINE{m}/'
+        key = f'LATEXINLINE{m}LATEXINLINE'
         latex_inline[key] = content[start:end]
         content = f'{content[:start]}{key}{content[end:]}'
     html = markdown2.markdown(
@@ -309,6 +361,7 @@ def markdown_list_to_latex(content):
             'middle-word-em': False,  # so urls that have MIT_technology_ wont become MIT<em>technology</em>
         }
     )
+
     markdown2.Latex.run = _old_run
     while '<pre><code>' in html:
         mo = re.search(r'<pre><code>(.+)</code></pre>', html, flags=re.DOTALL | re.MULTILINE)
@@ -317,17 +370,26 @@ def markdown_list_to_latex(content):
         start, end = mo.span()
         inner_latex_list = indent(markdown_list_to_latex(mo.groups()[0]))
         html = f'{html[:start]}\n{inner_latex_list}\n{html[end:]}'
-        print('fuck')
     html = re.sub(r'(<p>|<\/p>)', '', html)  # markdown2 injects <p> into its html lists
 
     latex_list = html[:]
-    latex_list = latex_list.replace('<ol>', r'\begin{enumerate}')
+
     latex_list = latex_list.replace('</ol>', r'\end{enumerate}')
     latex_list = latex_list.replace('<ul>', r'\begin{itemize}')
     latex_list = latex_list.replace('</ul>', r'\end{itemize}')
     latex_list = latex_list.replace('<li>', r'\item ')
     latex_list = latex_list.replace('</li>', r'')
-
+    mos = list(re.finditer(r'<ol(?: start="(?P<start>\d+)")?>', latex_list))
+    for mo in reversed(mos):
+        start, end = mo.span()
+        groupdict = mo.groupdict()
+        setcounter = groupdict.get('start', '') or ''
+        replacement = r'\begin{enumerate}'
+        if setcounter:
+            # https://tex.stackexchange.com/a/149
+            # FIX: html list and improved
+            replacement = f'\\begin{{enumerate}}\n\\setcounter{{enumi}}{{{setcounter}}}'
+        latex_list = f'{latex_list[:start]}{replacement}{latex_list[end:]}'
     for key, value in latex_inline.items():
         latex_list = latex_list.replace(key, value)
 
@@ -387,8 +449,8 @@ class Doclet(object):
     data: dict = dataclasses.field(default_factory=lambda: {})
 
 
-def sections_to_doclets(sections, md_filepath, output_dirpath):
-    # type: (List[T_SECTION], str, str) -> Tuple[List[Doclet], Dict[str, str], List[Tuple[str, str]], List[str], List[str]]
+def sections_to_doclets(sections, md_filepath, output_dirpath, auto_label_caption=False):
+    # type: (List[T_SECTION], str, str, bool) -> Tuple[List[Doclet], Dict[str, str], List[Tuple[str, str]], List[str], List[str]]
     '''
     Description:
         - given the list of discovered big sections and the original markdown file
@@ -416,6 +478,7 @@ def sections_to_doclets(sections, md_filepath, output_dirpath):
     ]
     appendix = False
     interdoc_labels = {}
+    section_freq = {}
     download_url_filepaths = []
     while sections:
         section, md_content, mo = sections.pop(0)
@@ -427,7 +490,7 @@ def sections_to_doclets(sections, md_filepath, output_dirpath):
                     end = start + 64
                     endline = md_content.find('\n', start) - 1
                     end = min([end, endline])
-                    lineno = list(find_lineno_index(md_content[start:end], original_md_content))[0][0]
+                    lineno = list(find_lineno_index(md_content[start:end].strip(), original_md_content))[0][0]
                     errors.append(f'naked url! enclose with []()! lineno {lineno} {md_content[start:end]}...')
 
         if appendix:
@@ -443,9 +506,20 @@ def sections_to_doclets(sections, md_filepath, output_dirpath):
             groupdict = mo.groupdict()
         if section != 'any':
             if section in set(['table', 'code', 'latex', 'quote', 'literal']):
-                caption = groupdict.get('caption', '')
-                label = groupdict.get('label', '')
-                content = groupdict.get('content', '')
+                if section not in section_freq:
+                    section_freq[section] = 0
+                section_freq[section] += 1
+
+                default_label = ''
+                default_caption = ''
+                if auto_label_caption:
+                    tpl = SECTION_ABBREV.get(section, ('', ''))
+                    default_caption = f'{tpl[0]}-{section_freq[section]}'
+                    default_label = f'{tpl[1].lower()}-{section_freq[section]}'
+
+                caption = groupdict.get('caption', '') or default_caption
+                label = groupdict.get('label', '') or default_label
+                content = groupdict.get('content', '') or ''
 
                 if section in set(['quote']):
                     # NOTE: starting from the very first > to the last...
@@ -454,13 +528,14 @@ def sections_to_doclets(sections, md_filepath, output_dirpath):
                     # $$  # 301 gets caught as the label...
                     # 301 = 03~ 00~ 01 = 0000~0011, 0000~0000, 0000~0001
                     # $$
-                    if r'\label' not in md_content:
-                        label = ''
-                        content = f'{label}{content}'
+                    if r'\label' not in md_content and groupdict.get('label', ''):
+                        label = default_label
+                        bad_label = groupdict.get('label', '') or ''
+                        content = f'{bad_label}{content}'
 
                 if not content:
                     raise RuntimeError('could not determine content?!')
-                lineno = list(find_lineno_index(md_content, original_md_content))[0][0] + 1
+                lineno = list(find_lineno_index(md_content.strip(), original_md_content))[0][0] + 1
 
                 if not label and section not in set(['literal', 'quote']):
                     example = 'label: something-or-other'
@@ -514,10 +589,22 @@ def sections_to_doclets(sections, md_filepath, output_dirpath):
             for section_sub, md_content_sub, mo_sub in small_sections:
                 if appendix:
                     appendix = False  # switch it back off, we JUST turned it on for someone else
-                label = ''
-                caption = ''
+
+                if section_sub not in section_freq:
+                    section_freq[section_sub] = 0
+                section_freq[section_sub] += 1
+
+                default_label = ''
+                default_caption = ''
+                if auto_label_caption:
+                    tpl = SECTION_ABBREV.get(section_sub, ('', ''))
+                    default_caption = f'{tpl[0]}-{section_freq[section_sub]}'
+                    default_label = f'{tpl[1].lower()}-{section_freq[section_sub]}'
+
+                label = default_label
+                caption = default_caption
                 data = {}
-                lineno = list(find_lineno_index(md_content_sub, original_md_content))[0][0] + 1
+                lineno = list(find_lineno_index(md_content_sub.strip(), original_md_content))[0][0] + 1
                 groupdict_sub = {}
                 if mo_sub is not None:
                     groupdict_sub = mo_sub.groupdict()
@@ -562,6 +649,10 @@ def sections_to_doclets(sections, md_filepath, output_dirpath):
                     path, ext = os.path.splitext(path)  # doesnt like extensions???
                     if ext.lower() in ['.svg']:
                         raise RuntimeError(f'image src at "{path}" is using a forbidden extension, cannot proceed')
+                elif section_sub == 'literal-inline':
+                    pass
+                elif section_sub == 'latex-inline':
+                    pass
 
                 elif section_sub == 'any':
                     # i know ahead of time that bad usage of citations is a bad look.
@@ -574,8 +665,8 @@ def sections_to_doclets(sections, md_filepath, output_dirpath):
 
                 if label:
                     if label in interdoc_labels:
-                        errors.append(f'duplicate {section} label {label!r}')
-                    interdoc_labels[label] = section
+                        errors.append(f'duplicate {section_sub} label {label!r}')
+                    interdoc_labels[label] = section_sub
 
                 doclets.append(Doclet(
                     section=section_sub,
@@ -677,32 +768,31 @@ def markdown_refs_to_latex(content, original_md_content, labels, errors, templat
         start, end = citation_mo.span()
         citation = content[start:end]
 
+        if '69-99' in citation:
+            print('plz')
         if '@' in citation:  # <chrisbcarl@outlook.com> is not a citation haha
             continue
 
-        mo2 = REGEX_CITATION_FULL.match(citation)
-        if not mo2:
-            mo3 = REGEX_CITATION_PAGE.match(citation)
-            if not mo3:
-                # BUG: LIST CITATION
-                mo4 = REGEX_HTML_ELEMENT.match(citation)
-                if mo4:  # this is raw html...
-                    continue
+        mo2 = REGEX_CITATION_PAGE.match(citation)
+        if mo2:
+            citation_mo = mo2
+        else:
+            mo3 = REGEX_CITATION_FULL.match(citation)
+            if mo3:
+                citation_mo = mo3
+            else:
                 try:
                     lineno = list(find_lineno_index(citation, original_md_content))[0][0] + 1
                 except Exception:
                     lineno = -1
                 raise RuntimeError(f'citation at lineno {lineno} is completely baffling to me: {citation!r}')
-            citation_mo = mo3
-        else:
-            citation_mo = mo2
         groups = citation_mo.groupdict()
         original_ref = groups.get('ref', '')
         ref_dict = labels.get(original_ref.lower())
 
         if not ref_dict:
             errors.append(f'ref {original_ref!r} not found in bibilography or interdoc!')
-            return ''
+            return content
 
         ref_section = ref_dict['section']
         ref = ref_dict['label']
@@ -776,7 +866,7 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
                 template = headers.get('template', template)  # gets overriden if default
                 headers['template'] = template
             else:
-                lineno = list(find_lineno_index(doclet.content, original_md_content))[0][0]
+                lineno = list(find_lineno_index(doclet.content.strip(), original_md_content))[0][0]
                 warnings.append(f'multiple yamls detected at "{md_relpath}", lineno {lineno}! NOT PROCESSING AS HEADER')
             continue
 
@@ -789,6 +879,8 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
 
         # TODO: auto Fig. Table. Code. etc.
         if section in set(['comment']):
+            # WARNING: strip the content of latex otherwise biber doesnt fking work...
+            _, content = bibtex.extract_from_and_remove(content)
             content = '\n'.join(f'% {line}' for line in content.splitlines())
         elif section == 'header':
             MD_HEADER_TO_LATEX = {
@@ -841,16 +933,18 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
         elif section == 'table':
             rows = markdown.table_to_rows(content)
             content = latex.rows_to_latex(rows, caption=caption, label=label, aligned='left')
+        elif section == 'latex-inline':
+            # are there $latex$ in the content?
+            content = REGEX_MARKDOWN_LATEX_INLINE.sub(r'\\(\g<2>\\)', content)
+        elif section == 'literal-inline':
+            # are there `literal` in the content?
+            content = REGEX_MARKDOWN_LITERAL_INLINE.sub(r'\\lstinline{\g<1>}', content)
         else:
             # are there any URL's in the content?
             for url_mo in reversed(list(REGEX_MARKDOWN_URL.finditer(content))):
                 url = url_mo.groups()[-1][:-1]  # lop off last )
                 content = f'{content[:url_mo.start()]}\\url{{{url}}}{content[url_mo.end():]}'
             content = REGEX_MARKDOWN_URL.sub(r'\\url{\g<2>}', content)
-            # are there `literal` in the content?
-            content = REGEX_MARKDOWN_LITERAL_INLINE.sub(r'\\lstinline{\g<1>}', content)
-            # are there $latex$ in the content?
-            content = REGEX_MARKDOWN_LATEX_INLINE.sub(r'\\(\g<1>\\)', content)
             # if postcontent != content:
             #     content = postcontent
             # are there any emphasis like bold, italic, underline, etc?
@@ -866,26 +960,32 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
                 content = postcontent
 
         # are there refs IN THE CONTENT?
-        if section in set(['code', 'literal', 'math']):
+        if 'inline' in section:
+            pass
+        elif section in set(['code', 'literal', 'math']):
             mo = REGEX_CITATION.search(content)
             if mo:
                 possible_citation = mo.groupdict()['ref']
                 if possible_citation.lower() in labels:
-                    lineno = list(find_lineno_index(content[mo.start():mo.end()], original_md_content))[0][0]
+                    lineno = list(find_lineno_index(content[mo.start():mo.end()].strip(), original_md_content))[0][0]
                     errors.append(f'illegal citation placement in {section!r} at "{md_relpath}", lineno {lineno}!')
         else:
             content = markdown_refs_to_latex(content, original_md_content, labels, errors, template=template)
         if section in set(['any']):
             content = latex.latex_escape(content)
 
+        # final uinversal fixes
         content = unicode_replace(content)
         content = latex.latex_replace(content)
         content.count('\n')
         if content.count('\n') > 1:
             content = dedent(content).strip()
+        content = re.sub(r'(\d)+\%', r'\g<1>\\%', content)  # individual percentages
 
-        if section in ['latex', 'list', 'header', 'code']:
+        if section in set(['latex', 'list', 'header', 'code']):
             content = f'\n\n{content}\n\n'
+        elif 'inline' in section:
+            content = f' {content} '
         if append_appendix:
             appendix_body.append(content)
         else:

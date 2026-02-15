@@ -21,6 +21,7 @@ Examples:
         -ss  # skip spellcheck
 
 Updates:
+    2026-02-15 - tools.md2latex - added --auto-label-caption
     2026-02-10 - tools.md2latex - FIX: template was not being passed along from md2latex to md2pdf
     2026-02-08 - tools.md2latex - FIX: spellcheck wasnt triggering on fatal, quotes picked up correctly now
     2026-02-06 - tools.md2latex - refactored for simplicity and readability, its much improved
@@ -37,7 +38,7 @@ import os
 import sys
 import logging
 from typing import List, Generator, Optional, Tuple, Dict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from argparse import ArgumentParser
 import pprint
 
@@ -82,6 +83,7 @@ class Arguments:
     template: str = md2latex.DEFAULT_TEMPLATE
     spellcheck_fatal: bool = False
     skip_spellcheck: bool = False
+    auto_label_caption: bool = False
     # wc-applet
     word_count: bool = False
     # non-app
@@ -100,6 +102,7 @@ class Arguments:
         app.add_argument('--template', '-t', type=str, default=md2latex.DEFAULT_TEMPLATE, choices=md2latex.TEMPLATES, help='document style, really')
         app.add_argument('--spellcheck-fatal', '-sf', action='store_true', help='spellcheck fail is fatal')
         app.add_argument('--skip-spellcheck', '-ss', action='store_true', help='skip-spellcheck entirely')
+        app.add_argument('--auto-label-caption', '-alc', action='store_true', help='auto label and auto caption if stuff is missing?')
 
         wc = parser.add_argument_group('word-count')
         wc.add_argument('--word-count', '-wc', action='store_true', help='get the word count, exit')
@@ -131,6 +134,9 @@ class Arguments:
         arguments.process()
         return arguments
 
+    def to_dict(self):
+        return {fie.name: getattr(self, fie.name) for fie in fields(self)}
+
 
 def log_error_warnings(phase, errors, warnings):
     # type: (str, List[str], List[str]) -> None
@@ -158,9 +164,10 @@ def markdown_to_latex(
     wc=False,
     spellcheck_fatal=False,
     skip_spellcheck=False,
+    auto_label_caption=False,
     debug=False,
 ):
-    # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool) -> Tuple[str, str, List[Tuple[str, str]], Dict[str, str]]
+    # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool, bool) -> Tuple[str, str, List[Tuple[str, str]], Dict[str, str]]
     if template not in md2latex.TEMPLATES:
         raise ValueError(f'template {template!r} not in {list(md2latex.TEMPLATES)}')
     md2latex.assert_executables_exist()
@@ -195,13 +202,14 @@ def markdown_to_latex(
     # sections
     phase, errors, warnings = 'sections', [], []
     LOGGER.info('running %r', phase)
-    sections = md2latex.analyze_large_sections(md_content)
+    sections, md_content = md2latex.analyze_extract_sections(md_content)
+    sections += md2latex.analyze_large_sections(md_content)
     log_error_warnings(phase, errors, warnings)
 
     # doclets
     phase, errors, warnings = 'sections2doclets', [], []
     LOGGER.info('running %r', phase)
-    doclets, interdoc_labels, download_url_filepaths, errors, warnings = md2latex.sections_to_doclets(sections, md_filepath, output_dirpath)
+    doclets, interdoc_labels, download_url_filepaths, errors, warnings = md2latex.sections_to_doclets(sections, md_filepath, output_dirpath, auto_label_caption=auto_label_caption)
     log_error_warnings(phase, errors, warnings)
 
     phase, errors, warnings = 'labels', [], []
@@ -259,6 +267,7 @@ def main():
         wc=args.word_count,
         spellcheck_fatal=args.spellcheck_fatal,
         skip_spellcheck=args.skip_spellcheck,
+        auto_label_caption=args.auto_label_caption,
         debug=args.debug,
     )
     LOGGER.info('.bib at "%s"', os.path.relpath(bibliography_output_filepath, os.getcwd()))

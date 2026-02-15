@@ -13,9 +13,6 @@ ipynb
 md2pdf
     stick to whether the bibilography should be finelname or filepath....
 
-    BUG:
-        # BUG: LIST CITATION list is getting rendered as html..., then picked up as citations...
-            '<ol start="2">' is being picked up as a citation...
 
     support bibtex with bad types like ARTICLE or Article -> article
 

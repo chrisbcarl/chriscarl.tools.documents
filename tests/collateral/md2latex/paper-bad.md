@@ -59,7 +59,7 @@ Duplicate header.
 Lets go over some basics.
 
 ## Autocorrected
-Double  spaced words  are autocorrected to single space. "Quotations" are adjusted accordingly, normally you'd need a ``'` to get the opening quote, and a `''` to get the closing. This is handled already. Apostrophe's are also handled.
+Double  spaced words  are autocorrected to single space. "Quotations" are adjusted accordingly, normally you'd need a backtick to get the opening quote, and a `''` to get the closing. This is handled already. Apostrophe's are also handled.
 
 ## Typesetting
 If you want *italicized*, use the two asterisks as normal.
