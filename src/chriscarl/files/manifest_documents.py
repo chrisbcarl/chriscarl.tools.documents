@@ -39,7 +39,7 @@ LOGGER.addHandler(logging.NullHandler())
 
 # ./
 DIRPATH_ROOT = SCRIPT_DIRPATH
-FILEPATH_MANIFEST_ACADEMIA_PY = os.path.join(DIRPATH_ROOT, 'manifest_documents.py')
+FILEPATH_MANIFEST_DOCUMENTS_PY = os.path.join(DIRPATH_ROOT, 'manifest_documents.py')
 
 # ./spellchecker
 DIRPATH_SPELLCHECKER = os.path.join(SCRIPT_DIRPATH, './spellchecker')

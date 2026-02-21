@@ -21,6 +21,7 @@ Examples:
         -ss  # skip spellcheck
 
 Updates:
+    2026-02-20 - tools.md2latex - supporting markdown specific function movement
     2026-02-15 - tools.md2latex - added --auto-label-caption
     2026-02-10 - tools.md2latex - FIX: template was not being passed along from md2latex to md2pdf
     2026-02-08 - tools.md2latex - FIX: spellcheck wasnt triggering on fatal, quotes picked up correctly now
@@ -50,7 +51,7 @@ from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, dirpath, filename, is_file
 from chriscarl.core.lib.stdlib.io import read_text_file
-from chriscarl.core.functors.parse import latex
+from chriscarl.core.functors.parse import markdown
 from chriscarl.tools.shed import md2latex
 
 SCRIPT_RELPATH = 'chriscarl/tools/md2latex.py'
@@ -202,14 +203,16 @@ def markdown_to_latex(
     # sections
     phase, errors, warnings = 'sections', [], []
     LOGGER.info('running %r', phase)
-    sections, md_content = md2latex.analyze_extract_sections(md_content)
-    sections += md2latex.analyze_large_sections(md_content)
+    sections, md_content = markdown.analyze_extract_sections(md_content)
+    sections += markdown.analyze_large_sections(md_content)
     log_error_warnings(phase, errors, warnings)
 
     # doclets
     phase, errors, warnings = 'sections2doclets', [], []
     LOGGER.info('running %r', phase)
-    doclets, interdoc_labels, download_url_filepaths, errors, warnings = md2latex.sections_to_doclets(sections, md_filepath, output_dirpath, auto_label_caption=auto_label_caption)
+    doclets, interdoc_labels, download_url_filepaths, errors, warnings = markdown.sections_to_doclets(
+        sections, md_filepath, output_dirpath=output_dirpath, auto_label_caption=auto_label_caption, use_angle_citations=True
+    )
     log_error_warnings(phase, errors, warnings)
 
     phase, errors, warnings = 'labels', [], []
