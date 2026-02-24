@@ -42,10 +42,6 @@ LOGGER.addHandler(logging.NullHandler())
 DIRPATH_ROOT = SCRIPT_DIRPATH
 FILEPATH_MANIFEST_DOCUMENTS_PY = os.path.join(DIRPATH_ROOT, 'manifest_documents.py')
 
-# ./ipynb
-DIRPATH_IPYNB = os.path.join(SCRIPT_DIRPATH, './ipynb')
-FILEPATH_NOTEBOOK_IPYNB = os.path.join(DIRPATH_IPYNB, 'notebook.ipynb')
-
 # ./mathml2latex
 DIRPATH_MATHML2LATEX = os.path.join(SCRIPT_DIRPATH, './mathml2latex')
 FILEPATH_MATHML2LATEX_TEMPLATE = os.path.join(DIRPATH_MATHML2LATEX, 'template.tex')

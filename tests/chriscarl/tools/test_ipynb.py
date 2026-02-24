@@ -25,7 +25,6 @@ import unittest
 from chriscarl.core import constants
 from chriscarl.core.lib.stdlib.os import abspath
 from chriscarl.core.lib.stdlib.unittest import UnitTest
-from chriscarl.files import manifest_documents
 
 # test imports
 import chriscarl.tools.ipynb as lib
@@ -47,15 +46,16 @@ constants.fix_constants(lib)  # deal with namespace sharding the files across di
 class TestCase(UnitTest):
 
     def setUp(self):
-        return super().setUp()
+        super().setUp()
+        self.ipynb_filepath = abspath(constants.TESTS_COLLATERAL_DIRPATH, 'ipynb', 'notebook.ipynb')
 
     def tearDown(self):
-        return super().tearDown()
+        super().tearDown()
 
     # @unittest.skip('lorem ipsum')
     def test_case_0(self):
         variables = [
-            (lib.ipynb, (manifest_documents.FILEPATH_NOTEBOOK_IPYNB, ), dict(output_dirpath=self.tempdir, no_open=True)),
+            (lib.ipynb, (self.ipynb_filepath, ), dict(output_dirpath=self.tempdir, no_open=True)),
         ]
         controls = [
             [abspath(self.tempdir, 'notebook.html'), abspath(self.tempdir, 'notebook.pdf')],
