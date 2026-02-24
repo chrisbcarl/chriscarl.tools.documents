@@ -77,12 +77,13 @@ DEFAULT_LOG_FILEPATH = abspath(TEMP_DIRPATH, 'tools.ipynb.log')
 
 # tool constants
 HEADER_DESCRIPTIONS = {
+    # # Header
     'Project': 'basic details and bibliography.',
     'Abstract': 'executive summary of this file.',
     'TOC': 'what it says on the tin.',
-    'Table of Contents': 'what it says on the tin.',
     'Question': 'the actual question being asked.',
     'Answer': 'the "overall" answer to the question.',
+    # ## SubHeaders
     'Background': 'reasonable background academic information that would be good to know.',
     'Solution': 'is the "justification" for providing the answer above.',
     'The Plan': 'is a pseudocode strategy for what the work is likely going to entail.',
@@ -90,18 +91,31 @@ HEADER_DESCRIPTIONS = {
     'Code - Setup': 'is ignorable boilerplate code that sets up stdlib, third party, constants, and seeds, acts as a safety valve for dependency checking.',
     'Code - Functions': 'is somewhat ignorable boilerplate functions for things like plotting or visualization that do not directly impact the main logic.',
     'Code - Main': 'is the main beef.',
+    # # Header
     'Post Mortem': 'musings about the aftermath. The conclusion is already highlighted in the [Answer](#Answer) section.',
+    # ## SubHeaders
     'Caveats': 'warnings or musings about trepidations or doubts encountered during answer development.',
     'Improvements': 'musings about what could be improved on the next attempt with a project like this.',
     'Further Reading': 'what it says on the tin.',
     'Replication': 'instructions for how the reader might replicate the learnings from this project on their own.',
     'Hardware': 'hardware notes if one wanted to replicate things exactly.',
     'Data': 'notes on how to obtain the data(s) used in the project.',
+    # # Header
+    'Appendix': 'back of the project',
+    # ## SubHeaders
     'Reference': 'back of the book style references',
     'Grading Criterion': 'grading criterion for the project if known in advance.',
     'Definitions, Formulae, Theory': 'the actual back of the book.',
     'Changelog': 'proof of work.',
 }
+EQUAL_HEADERS = {
+    'TOC': 'Table of Contents',
+    'Grading Criterion': 'Criterion',
+    'Grading Criterion': 'Prompt',
+    'Grading Criterion': 'Assignment Text',
+}
+for _header, _equal_header in EQUAL_HEADERS.items():
+    HEADER_DESCRIPTIONS[_equal_header] = HEADER_DESCRIPTIONS[_header]
 
 
 class ReadWriteIpynb(ReadWriteJson):
