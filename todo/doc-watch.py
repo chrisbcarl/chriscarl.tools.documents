@@ -26,8 +26,9 @@ def get_hash(content):
 
 REGEX_MARKDOWN_TABLE = re.compile(r'(?P<indent>[ \t]*)\|(?P<table>.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
 filepaths = [
-    r'ignoreme\tables.md',
+    # r'todo\tables.md',
     r'C:\Users\chris\OneDrive\_recent\SJSU_2026S\CMPE-180D\notes\ch3\ch3.md',
+    r'C:\Users\chris\OneDrive\_recent\SJSU_2026S\MATH-161B\notes\gottlieb-summary-table.md',
 ]
 filepaths_modified = {filepath: 0.0 for filepath in filepaths}
 try:
