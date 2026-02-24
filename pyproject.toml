@@ -100,6 +100,8 @@ lxml = "^6.0.2"
 requests = "^2.32.5"
 markdownify = "^1.2.2"
 markdown2 = "^2.5.4"
+
+[tool.poetry.group.ipynb.dependencies]
 jupyterlab = "^4.5.5"
 notebook = "^7.5.3"
 voila = "^0.5.11"
