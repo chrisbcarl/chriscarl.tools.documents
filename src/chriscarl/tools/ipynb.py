@@ -74,7 +74,6 @@ LOGGER.addHandler(logging.NullHandler())
 DEFAULT_FIB_INIT = [0, 1]
 DEFAULT_OUTPUT_DIRPATH = abspath(TEMP_DIRPATH, 'tools.ipynb')
 DEFAULT_LOG_FILEPATH = abspath(TEMP_DIRPATH, 'tools.ipynb.log')
-DEFAULT_OUTPUT_DIRPATH = abspath(os.getcwd())  # better to be in place
 
 # tool constants
 HEADER_DESCRIPTIONS = {
@@ -467,6 +466,9 @@ def ipynb(
             rwt.text = re.sub(re.escape(slug_life), slug_life, rwt.text, flags=re.IGNORECASE)
 
     fname = filename(input_filepath)
+    if output_dirpath == DEFAULT_OUTPUT_DIRPATH:
+        output_dirpath = dirpath(input_filepath)
+        LOGGER.info('setting output dirpath to "%s"', output_dirpath)
 
     if execute:
         LOGGER.info('executing...')
