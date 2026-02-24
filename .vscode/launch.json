@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Current File",
+            "name": "[python] - current",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
@@ -73,5 +73,19 @@
             ],
             "justMyCode": true,
         },
+        {
+            "name": "[ipynb]",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/chriscarl/tools/ipynb.py",
+            "console": "integratedTerminal",
+            "args": [
+                "notebook.ipynb"
+                // "src/chriscarl/files/ipynb/notebook.ipynb",
+                // "--log-level", "DEBUG"
+            ],
+            "justMyCode": true,
+        },
+
     ]
 }

@@ -1,3 +1,11 @@
+latex watch
+    \bmatrix -> \begin{bmatrix}
+    xbar -> \bar{x}
+    yhat -> \yhat
+    xyhat -> \overline{xy}
+
+
+
 pandoc wrapper
 
     integrate the pandoc wrapper asap even if it blows
@@ -11,6 +19,18 @@ ipynb
 
 
 md2pdf
+
+    bugs
+
+        interref is being referred to through autocite but should instead be a ~ref...
+            md2pdf CMPE-180D/assignments/hw1/2026S-SJSU-CMPE180D-hw_1-chris_carl.md `
+                -b CMPE-180D/assignments/bibliography.md `
+                -t math `
+                -o CMPE-180D/assignments/hw1/render -ss
+
+        emphasis analys can only happen AFTER literals have been processed.
+        OR find some way to "attach" literals and other inliners to the previous element in the appended list.
+
     stick to whether the bibilography should be finelname or filepath....
 
 
@@ -27,8 +47,9 @@ md2pdf
         ISE-201\assignments\02-ipynb-critique\2026S-SJSU-ISE201-hw_03-chris_carl.ipynb
 
     - might be able to do the Table/Code thing by just searching for those occurances and confirming that 'Table ' is exactly before the citation match...
-    - code colors
     - if there are tables or figures and theyre are NOT referenced, should error out. thats not a good thing.
+
+    - code colors
     - you're triggers spellcheck because i'm getting rid of all ' in words... maybe solution is to get rid of all ' words and append them in the end or something?
     - a naked ^ in the middle of text is interpreted as math... or perhaps a 2^2 is but ^ naked isnt?
     - invocations that sfail:
@@ -52,17 +73,6 @@ md2pdf
     - old table missing caption/label doesnt get mentioned
     - check research-aid-2 for leftovers
     - default template doesnt work, figure something out package wise...
-
-    bugs
-
-        interref is being referred to through autocite but should instead be a ~ref...
-            md2pdf CMPE-180D/assignments/hw1/2026S-SJSU-CMPE180D-hw_1-chris_carl.md `
-                -b CMPE-180D/assignments/bibliography.md `
-                -t math `
-                -o CMPE-180D/assignments/hw1/render -ss
-
-        emphasis analys can only happen AFTER literals have been processed.
-        OR find some way to "attach" literals and other inliners to the previous element in the appended list.
 
     features
 

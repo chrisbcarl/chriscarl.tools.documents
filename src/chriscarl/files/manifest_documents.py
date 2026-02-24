@@ -10,6 +10,7 @@ files.manifest_documents is literally what it says on the tin
 files are modules that elevate files so they can be used in python, either registering the path name or actually interacting with them like data cabinets.
 
 Updates:
+    2026-02-23 - files.manifest_documents - added ipynb files
     2026-01-29 - files.manifest_documents - md2latex
     2026-01-25 - files.manifest_documents - initial commit
 '''
@@ -41,13 +42,6 @@ LOGGER.addHandler(logging.NullHandler())
 DIRPATH_ROOT = SCRIPT_DIRPATH
 FILEPATH_MANIFEST_DOCUMENTS_PY = os.path.join(DIRPATH_ROOT, 'manifest_documents.py')
 
-# ./spellchecker
-DIRPATH_SPELLCHECKER = os.path.join(SCRIPT_DIRPATH, './spellchecker')
-FILEPATH_ACRONYMS = os.path.join(DIRPATH_SPELLCHECKER, 'acronyms.txt')
-FILEPATH_DICTIONARY = os.path.join(DIRPATH_SPELLCHECKER, 'dictionary.txt')
-FILEPATH_NAMES = os.path.join(DIRPATH_SPELLCHECKER, 'names.txt')
-FILEPATH_NON_WORDS = os.path.join(DIRPATH_SPELLCHECKER, 'non-words.txt')
-
 # ./mathml2latex
 DIRPATH_MATHML2LATEX = os.path.join(SCRIPT_DIRPATH, './mathml2latex')
 FILEPATH_MATHML2LATEX_TEMPLATE = os.path.join(DIRPATH_MATHML2LATEX, 'template.tex')
@@ -57,5 +51,12 @@ DIRPATH_MD2LATEX = os.path.join(SCRIPT_DIRPATH, './md2latex')
 FILEPATH_MD2LATEX_DEFAULT_TEMPLATE = os.path.join(DIRPATH_MD2LATEX, 'default.tex')
 FILEPATH_MD2LATEX_IEEE_TEMPLATE = os.path.join(DIRPATH_MD2LATEX, 'ieee.tex')
 FILEPATH_MD2LATEX_CHICAGO_TEMPLATE = os.path.join(DIRPATH_MD2LATEX, 'chicago.tex')
+
+# ./spellchecker
+DIRPATH_SPELLCHECKER = os.path.join(SCRIPT_DIRPATH, './spellchecker')
+FILEPATH_ACRONYMS = os.path.join(DIRPATH_SPELLCHECKER, 'acronyms.txt')
+FILEPATH_DICTIONARY = os.path.join(DIRPATH_SPELLCHECKER, 'dictionary.txt')
+FILEPATH_NAMES = os.path.join(DIRPATH_SPELLCHECKER, 'names.txt')
+FILEPATH_NON_WORDS = os.path.join(DIRPATH_SPELLCHECKER, 'non-words.txt')
 
 # ###

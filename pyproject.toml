@@ -85,11 +85,12 @@ mathml2latex = 'chriscarl.tools.mathml2latex:main'
 md2latex = 'chriscarl.tools.md2latex:main'
 md2pdf = 'chriscarl.tools.md2pdf:main'
 html2md = 'chriscarl.tools.html2md:main'
+ipynb = 'chriscarl.tools.ipynb:main'
 
 
 # poetry add package
 [tool.poetry.dependencies]
-chriscarl = {develop = true, path="../chriscarl.python"}  # version = ">0.0.0"
+chriscarl-python-web = {path = "../chriscarl.python.web", develop = true}
 pyspellchecker = "^0.8.4"
 pyyaml = "^6.0.3"
 colorama = "^0.4.6"
@@ -100,6 +101,15 @@ markdownify = "^1.2.2"
 markdown2 = "^2.5.4"
 
 
+# ipynb group, but not good to make an actual group
+jupyterlab = "^4.5.5"
+notebook = "^7.5.3"
+voila = "^0.5.11"
+ipywidgets = "^8.1.8"
+ipympl = "^0.10.0"
+
+
 [tool.poetry.group.dev.dependencies]  # poetry add package --group dev
 mypy = "^1.13.0"
 pytest-cov = "^7.0.0"
+
