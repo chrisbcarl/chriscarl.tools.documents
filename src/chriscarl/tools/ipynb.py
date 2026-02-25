@@ -113,6 +113,7 @@ EQUAL_HEADERS = {
     'Grading Criterion': 'Criterion',
     'Grading Criterion': 'Prompt',
     'Grading Criterion': 'Assignment Text',
+    'Grading Criterion': 'Instructions',
 }
 for _header, _equal_header in EQUAL_HEADERS.items():
     HEADER_DESCRIPTIONS[_equal_header] = HEADER_DESCRIPTIONS[_header]
@@ -515,7 +516,7 @@ def ipynb(
         if not no_pdf:
             # relpath = os.path.relpath(html_filepath, os.getcwd())
             pdf_filepath = abspath(output_dirpath, f'{fname}.pdf')
-            if os.path.isfile(pdf_filepath):
+            if os.path.isfile(pdf_filepath):  # otherwise chromium appends a (1)
                 os.remove(pdf_filepath)
 
             # html = '\n'.join(lines)
@@ -537,8 +538,9 @@ def ipynb(
             #     raise RuntimeError(f'found bad characters {bad_chars} in the markdown, please replace manually!')
 
             LOGGER.info('HTML TO PDF VIA EDGE/CHROME...')
-            selenium.print_pdf(html_filepath, pdf_filepath=pdf_filepath)
+            new_pdf_filepath = selenium.print_pdf(html_filepath, dirpath=output_dirpath, margins=False)
 
+            shutil.move(new_pdf_filepath, pdf_filepath)
             LOGGER.info(f'PDF: "{pdf_filepath}"')
             if not no_open:
                 launch_editor(pdf_filepath)
