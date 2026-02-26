@@ -80,8 +80,7 @@
             "program": "${workspaceFolder}/src/chriscarl/tools/ipynb.py",
             "console": "integratedTerminal",
             "args": [
-                "notebook.ipynb"
-                // "src/chriscarl/files/ipynb/notebook.ipynb",
+                "tests/collateral/ipynb/notebook.ipynb",
                 // "--log-level", "DEBUG"
             ],
             "justMyCode": true,

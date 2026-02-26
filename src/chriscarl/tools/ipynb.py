@@ -13,6 +13,7 @@ Well here you go.
 Was `ipynb-toc-export-execute-html.py` in a former life...
 
 Updates:
+    2026-02-26 - tools.ipynb - LaTeX renders correctly now so long as we wait for MathJax to insert DOM elements
     2026-02-23 - tools.ipynb - created chriscarl.tools.documents as 'ipynb'
     2025-07-19 - tools.ipynb - selenium print, shifted toc description to this script rather than embedded somehow in the template.
     2025-07-12 - tools.ipynb - even better export processing, light refactor
@@ -54,7 +55,7 @@ from chriscarl.core.constants import TEMP_DIRPATH
 from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, is_file, dirpath, filename
-from chriscarl.core.lib.stdlib.io import ReadWriteText
+from chriscarl.core.lib.stdlib.io import ReadWriteText, read_text_file
 from chriscarl.core.lib.stdlib.json import ReadWriteJson
 from chriscarl.core.lib.stdlib.subprocess import launch_editor
 from chriscarl.core.lib.third import selenium
@@ -538,7 +539,14 @@ def ipynb(
             #     raise RuntimeError(f'found bad characters {bad_chars} in the markdown, please replace manually!')
 
             LOGGER.info('HTML TO PDF VIA EDGE/CHROME...')
-            new_pdf_filepath = selenium.print_pdf(html_filepath, dirpath=output_dirpath, margins=False)
+            content = read_text_file(html_filepath)
+            inline_latexes = list(re.finditer(r'\$[^\$]+\$', content))
+            wait_for_by = None
+            if inline_latexes:
+                # let MathJax javascript insert dom elements
+                wait_for_by = ('XPATH', '//script[contains(@id, "MathJax-Element")]')
+
+            new_pdf_filepath = selenium.print_pdf(html_filepath, dirpath=output_dirpath, margins=False, wait_for_by_value=wait_for_by)
 
             shutil.move(new_pdf_filepath, pdf_filepath)
             LOGGER.info(f'PDF: "{pdf_filepath}"')
