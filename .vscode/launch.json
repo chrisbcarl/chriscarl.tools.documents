@@ -85,6 +85,17 @@
             ],
             "justMyCode": true,
         },
-
+        {
+            "name": "[doc-watch]",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/chriscarl/tools/doc_watch.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--md-table-pretty",
+                // "--log-level", "DEBUG"
+            ],
+            "justMyCode": true,
+        },
     ]
 }

@@ -86,6 +86,7 @@ md2latex = 'chriscarl.tools.md2latex:main'
 md2pdf = 'chriscarl.tools.md2pdf:main'
 html2md = 'chriscarl.tools.html2md:main'
 ipynb = 'chriscarl.tools.ipynb:main'
+doc-watch = 'chriscarl.tools.doc_watch:main'
 
 
 # poetry add package

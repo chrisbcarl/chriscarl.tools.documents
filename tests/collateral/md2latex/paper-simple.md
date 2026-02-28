@@ -125,20 +125,20 @@ You need to include packages `tabularx,booktabs` if you want tables. For IEEE, I
 
 caption: Single Column Table <CitekeyPhdthesis>
 label: tbl-1-col
-| Column    | Also Column   |
-| --------- | ------------- |
-| 1         | a             |
-| 2         | b             |
+|Column   |Also Column  |
+|---------|-------------|
+|1        |a            |
+|2        |b            |
 
 
 Tables have a specific referencing mechanism which is entirely custom and not portable. It's simply the best I could do on a shoestring...
 
 caption: Two Column Table <CitekeyUnpublished>
 label: tbl-2-col
-| Numbers   | Alphabet      | variables     | sum           | multiplicat   |
-| --------- | ------------- | ------------- | ------------- | ------------- |
-| 1         | a             | x             | +             | *             |
-| 2         | b             | y             | -             | /             |
+|Numbers  |Alphabet     |variables    |sum          |multiplicat  |
+|---------|-------------|-------------|-------------|-------------|
+|1        |a            |x            |+            |*            |
+|2        |b            |y            |-            |/            |
 
 
 #### Code

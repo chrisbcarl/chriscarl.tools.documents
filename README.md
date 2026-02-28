@@ -3,8 +3,8 @@ Since I enrolled in SJSU in 2025F as an MS CMPE student, I have found need for l
 
 
 # Features
-|version    |author     |deployed   |created    |feature-name                           |description        |
-|---        | ---       | ---       | ---       | ---                                   | ---               |
+|version|author|deployed|created|feature-name|description|
+|---    |---   |---     |---    |---         |---        |
 
 
 # Acknowledgements

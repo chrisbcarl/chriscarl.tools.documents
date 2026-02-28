@@ -143,20 +143,20 @@ You can also reference other things inside the "alt" description of the image, a
 #### Tables
 You need to include packages `tabularx,booktabs` if you want tables. For IEEE, I offer two situations--a single column table like Table [tbl-1-col], but double column tables like Table [tbl-2-col] are also supported. Currently any table with $\text{cols} > 3$ will be set up as a double column table else single column table.
 
-| Column    | Also Column   |
-| --------- | ------------- |
-| 1         | a             |
-| 2         | b             |
+|Column   |Also Column  |
+|---------|-------------|
+|1        |a            |
+|2        |b            |
 
 caption: Single Column Table [CitekeyPhdthesis]
 ref: tbl-1-col
 
 Tables have a specific referencing mechanism which is entirely custom and not portable. It's simply the best I could do on a shoestring...
 
-| Numbers   | Alphabet      | variables     | sum           | multiplicat   |
-| --------- | ------------- | ------------- | ------------- | ------------- |
-| 1         | a             | x             | +             | *             |
-| 2         | b             | y             | -             | /             |
+|Numbers  |Alphabet     |variables    |sum          |multiplicat  |
+|---------|-------------|-------------|-------------|-------------|
+|1        |a            |x            |+            |*            |
+|2        |b            |y            |-            |/            |
 
 caption: Two Column Table [CitekeyUnpublished]
 ref: tbl-2-col
