@@ -16,6 +16,7 @@ Examples:
 
 Updates:
     2026-02-27 16:42 - tools.doc_watch - finished toolification
+                       tools.doc_watch - from a user perspective this works every very well.
     2026-02-15 21:58 - tools.doc_watch - finished first pass, the idea is to have some kind of doc watcher and you invoke it like this:
     2026-02-15 20:45 - tools.doc_watch - started
 
@@ -30,7 +31,7 @@ from __future__ import absolute_import, print_function, division, with_statement
 import os
 import sys
 import logging
-from typing import List, Generator, Optional
+from typing import List, Generator, Optional, Tuple
 from dataclasses import dataclass, field, fields
 from argparse import ArgumentParser
 import re
@@ -46,7 +47,7 @@ from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, walk_regex
 from chriscarl.core.lib.stdlib.io import read_text_file, write_text_file
 from chriscarl.core.lib.stdlib.hashlib import md5
 from chriscarl.core.functors.parse.markdown import table_prettify
-from chriscarl.core.types.str import indent
+from chriscarl.core.types.str import indent, find_lineno_index
 
 SCRIPT_RELPATH = 'chriscarl/tools/doc_watch.py'
 if not hasattr(sys, '_MEIPASS'):
@@ -122,9 +123,10 @@ REGEX_MARKDOWN_TABLE = re.compile(r'\n(?P<indent>[ \t]*)\|(?P<table>.+?)\|\n\n',
 
 
 def md_table_pretty(filepaths):
-    # type: (List[str]) -> List[str]
+    # type: (List[str]) -> Tuple[List[str], List[str]]
     '''return a list of successfully modified files'''
     modifieds = []
+    error_file_msg = []
     for filepath in filepaths:
         markdown = read_text_file(filepath)
         prior_hash = md5(markdown)
@@ -135,13 +137,20 @@ def md_table_pretty(filepaths):
             groups = mo.groupdict()
             indentation = len(groups['indent'])
             table = f'|{groups["table"]}|'
-            replacement = indent(table_prettify(table), indent=' ' * indentation)
+
+            try:
+                replacement = indent(table_prettify(table), indent=' ' * indentation)
+            except Exception as ex:
+                lineno = list(find_lineno_index(table, markdown))[0][0] + 1
+                error_file_msg.append((filepath, f'couldnt prettify! {ex}, "{filepath}", line {lineno}'))
+                continue
+
             markdown = f'{markdown[:start]}{replacement}\n\n{markdown[end:]}'
         replaced_hash = md5(markdown)
         if prior_hash != replaced_hash:
             write_text_file(filepath, markdown)
             modifieds.append(filepath)
-    return modifieds
+    return modifieds, error_file_msg
 
 
 KNOWN_FUNCS = {
@@ -160,6 +169,7 @@ def main():
 
     LOGGER.debug('getting mtimes')
     last_modified_dict = {key: {filepath: os.path.getmtime(filepath) for filepath in walk_regex(args.dirpath, key, ignore=args.exclude)} for key in KNOWN_FUNCS}
+    error_printed = {}
     try:
         while True:
             for key, funcs in KNOWN_FUNCS.items():
@@ -167,17 +177,33 @@ def main():
                 modified_since_last = []
                 for filepath in key_filepaths:
                     modified = os.path.getmtime(filepath)
-                    if (filepath in last_modified_dict[key]  # new file created
+                    if (filepath not in last_modified_dict[key]  # new file created
                         or modified > last_modified_dict[key][filepath]  # modified more recently
                         ):
                         modified_since_last.append(filepath)
 
                 actually_modified = set()
                 for func in funcs:
-                    lst = func(modified_since_last)
-                    if lst:
-                        LOGGER.info('modified %d files with %r: %s', len(lst), func.__name__, lst)
-                    actually_modified = actually_modified.union(lst)
+                    successes, failures = func(modified_since_last)
+                    successes = [os.path.relpath(fp, args.dirpath).replace('\\', '/') for fp in successes]
+                    error_file_msg = [(os.path.relpath(tpl[0], args.dirpath).replace('\\', '/'), tpl[1]) for tpl in failures]
+                    if successes:
+                        LOGGER.info('%r succeeded on %d files', func.__name__, len(successes))
+                        for success in successes:
+                            LOGGER.warning('    - %r: %s', func.__name__, success)
+                            if success in error_printed:
+                                del error_printed[success]  # clear the error
+                    if error_file_msg:
+                        topline_printed = False
+                        for file, msg in error_file_msg:
+                            if file not in error_printed:
+                                if not topline_printed:
+                                    LOGGER.warning('%r failed on %d files', func.__name__, len(error_file_msg))
+                                    topline_printed = True
+
+                                LOGGER.warning('    - %r: %s', func.__name__, msg)
+                                error_printed[file] = msg
+                    actually_modified = actually_modified.union(successes)
 
                 last_modified_dict[key].update({filepath: os.path.getmtime(filepath) for filepath in actually_modified})
             time.sleep(0.1)
