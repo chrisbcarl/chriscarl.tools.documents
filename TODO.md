@@ -4,11 +4,26 @@ latex watch
     yhat -> \yhat
     xyhat -> \overline{xy}
 
+latex alignment indentation
+
+
+        m\hat{p_1}      &= 633 \times 0.2970        &&= 1234 > 10 ? \checkmark \\
+        m(1-\hat{p_1})  &= 633 \times (1 - 0.2970)  &&= 1234 > 10 ? \checkmark \\
+        n\hat{p_2}      &= 166 \times 0.2892        &&= 1234 > 10 ? \checkmark \\
+        n(1-\hat{p_2})  &= 166 \times (1 - 0.2892)  &&= 1234 > 10 ? \checkmark \\
+
+
+> empty is good for markdown preview, not good for latex. eliminate > empties
+
 
 
 pandoc wrapper
 
     integrate the pandoc wrapper asap even if it blows
+
+        pandoc CMPE-180C/notes/midterm-notes.md `
+        --from=gfm --to=pdf --standalone --mathjax `
+        --output CMPE-180C/notes/midterm-notes.pdf
 
     too deeply nested is a lie.
 
@@ -21,6 +36,33 @@ ipynb
 md2pdf
 
     bugs
+        having 1 literal in the open like `hello` and another in the open like ```asdfasdf``` and -alc causes lit-1 to appear twice...
+
+        problem with it thinking that these are tables...
+
+            ```
+            ## 45
+            Show which JMP instruction assembles (short, near, or far) if the JMP THERE instruction is stored at memory address 10000H and the address of THERE is:
+
+
+            - (a) `l0020H`
+
+            short - location is within 1 bytes. $| 10020H - 10000H | = 20H < FFH$
+
+            - (b) `11000H`
+            ```
+
+
+        arrow citation within a > quote...
+
+        biber no output / no output biber
+            happens when no citations used!
+            create the .bib ONLY WHEN CITATIONS ARE USED...
+
+        better lineno messages, its supposed to be "file", line 69
+
+        - caption label redo, do not scan for it (in the same regex), its not worth it, look for it immediately before OR immediately after a section
+            - NOTE this will cut into the previous doclet
 
         interref is being referred to through autocite but should instead be a ~ref...
             md2pdf CMPE-180D/assignments/hw1/2026S-SJSU-CMPE180D-hw_1-chris_carl.md `
@@ -28,10 +70,88 @@ md2pdf
                 -t math `
                 -o CMPE-180D/assignments/hw1/render -ss
 
+        [https://gss.norc.org/](https://gss.norc.org/) is not "naked"...
+
+        confirm if order matters:
+
+            ```diff
+            -        # can have other stuff embedded
+            -        ('table', REGEX_MARKDOWN_TABLE),
+            -        ('latex', REGEX_MARKDOWN_LATEX),
+            +        # can have other stuff embedded, ORDER MATTERS because of who is considered a literal and who isnt
+                    ('literal', REGEX_MARKDOWN_MULTILINE_LITERAL),
+                    ('code', REGEX_MARKDOWN_CODE),
+            +        ('list', REGEX_MARKDOWN_LIST),  # lists can contain latex, tables, quotes, etc, so it is supreme
+            +        ('latex', REGEX_MARKDOWN_LATEX),
+            +        ('table', REGEX_MARKDOWN_TABLE),
+                    ('quote', REGEX_MARKDOWN_QUOTE),
+            -        ('list', REGEX_MARKDOWN_LIST),
+            ```
+
+            above order failed for the following
+
+            ```
+            4. calculate confidence interval, rejection region, p-value
+
+                $$
+                \begin{aligned}
+                \rm{CI} (1 - \alpha)\%  &= \hat{\delta} \pm \rm{CV} \times \widehat{SE}(\hat{\delta}) \\
+                                        &= 0.0078 \pm 1.96 \times 0.03789 \\
+                                        &= (0.0078 - 1.96 \times 0.03789, 0.0078 + 1.96 \times 0.03789) \\
+                                        &= (-0.0665, 0.0821) \\
+                \end{aligned}
+                $$
+
+                Two-tailed test: if test statistic > abs(critical value), then the test statistic is in the rejection region.
+
+                $$
+                \vert z \vert > Z_{\alpha/2} ? \\
+                \vert 0.02056 \vert > 1.96 ? \times \\
+                $$
+
+                The test statistic is not in the rejection region.
+            ```
+
+            maybe something to do with the way begin aligned occurs while it doesnt for the others?
+
+        latex cases need to be handled:
+            - inline
+            - doubleine
+                - equation
+                - aligned
+                - nothing
+                - label provided somewhere, or not (out of order, or not)
+
+        inline bibliography doesnt work if it's not at the bottom???
+
         emphasis analys can only happen AFTER literals have been processed.
         OR find some way to "attach" literals and other inliners to the previous element in the appended list.
 
+    find naked math and prompt user to deal with it, or better handling probably within lists...
+        both of these fail:
+
+            ```
+            2. Save Script to > Data Table whatever
+            ```
+
+            ```
+            2. `Save Script to > Data Table` whatever
+            ```
+
     stick to whether the bibilography should be finelname or filepath....
+
+    tables need to be indented or shit happens?!
+
+        ```
+        Participants were asked if they ($\rm{Agree}$ or $\rm{Disagree}$) with the following statement: “I have confidence in the public education system.” The responses collected between the the years 2014-2018 are shown below for both full time time and part time workers:
+
+            |        |Full Time|Part Time|
+            |--      |--       |--       |
+            |Agree   |188      |48       |
+            |Disagree|445      |118      |
+
+        Use this data to test the following hypothesis: “For the years 2014-2018, was the proportion of full time workers who agree with this statement is different from the proportion of part time worker
+        ```
 
 
     support bibtex with bad types like ARTICLE or Article -> article

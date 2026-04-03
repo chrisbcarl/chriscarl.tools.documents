@@ -23,6 +23,7 @@ carceral
 entendre
 etc
 unrigorous
+all-in-one
 
 
 # academic/invented
@@ -41,6 +42,12 @@ Taylorism
 de-biasing
 non-linear
 telecom
+graders
+
+
+# math
+boxplot
+p-value
 
 # programming
 basename
@@ -60,6 +67,7 @@ qword
 overfitting
 winograd
 backtick
+df
 
 # slang
 Influencers

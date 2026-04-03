@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''
+r'''
 Author:         Chris Carl
 Email:          chrisbcarl@outlook.com
 Date:           2026-02-06
@@ -11,6 +11,10 @@ tool are modules that define usually cli tools or mini applets that I or other p
 
 Updates:
     2026-02-06 - tools.shed.tex2pdf - initial commit
+
+TODO:
+    - figure out a way to read the upside down question mark, BIG_BAD. it needs to show up as text, not in the pdf data itself.
+        - re.findall(r'[\u0000-\u00FF]¿[\u0000-\u00FF]', content)
 '''
 
 # stdlib imports
@@ -38,6 +42,8 @@ SCRIPT_NAME = os.path.splitext(os.path.basename(__file__))[0]
 THIS_MODULE = sys.modules[__name__]
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
+
+BIG_BAD = '¿'
 
 
 def run_pdflatex(md_filename, output_dirpath, template):
@@ -78,3 +84,14 @@ def run_pdflatex(md_filename, output_dirpath, template):
             sys.exit(2)
         finally:
             os.remove(stdout)
+
+    # from chriscarl.core.lib.stdlib.os import abspath
+    # from chriscarl.core.lib.stdlib.io import read_text_file_try
+    # pdf_filepath = abspath(output_dirpath, md_filename)
+    # try:
+    #     pdf_content = read_text_file_try(pdf_filepath)
+    #     instances = pdf_content.count(BIG_BAD)
+    #     if instances > 0:
+    #         LOGGER.error('%r detected, %d instances! Perhaps bad references?', BIG_BAD, instances)
+    # except Exception:
+    #     pass

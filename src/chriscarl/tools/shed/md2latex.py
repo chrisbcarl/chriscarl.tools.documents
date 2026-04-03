@@ -10,6 +10,7 @@ tools.shed.md2latex is individual funcs that support the larger tool that COULD 
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-03-02 - tools.shed.md2latex - FIX: unsupported languages default to C++ lstlisting
     2026-02-20 - tools.shed.md2latex - moved out many regex and functions to the main library markdown parser.
     2026-02-15 - tools.shed.md2latex - added --auto-label-caption
                                        latex-inline, literal-inline
@@ -224,6 +225,7 @@ def markdown_list_to_latex(content):
     html = markdown2.markdown(
         content,
         extras={
+            # https://github.com/trentm/python-markdown2/wiki/Extras
             'tables': None,
             'footnotes': None,
             'headerids': None,
@@ -231,10 +233,10 @@ def markdown_list_to_latex(content):
             'middle-word-em': False,  # so urls that have MIT_technology_ wont become MIT<em>technology</em>
         }
     )
-
     markdown2.Latex.run = _old_run
-    while '<pre><code>' in html:
-        mo = re.search(r'<pre><code>(.+)</code></pre>', html, flags=re.DOTALL | re.MULTILINE)
+
+    while '<pre><code>' in html or '<code>' in html:
+        mo = re.search(r'<pre><code>(.+?)<\/code><\/pre>', html, flags=re.DOTALL | re.MULTILINE) or re.search(r'<code>(.+?)<\/code>', html, flags=re.DOTALL | re.MULTILINE)
         if not mo:
             raise RuntimeError('this cannot happen at this stage')
         start, end = mo.span()
@@ -533,15 +535,21 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
             if aligned:
                 # convert it to an equation anyway. regardless if sense or not. \begin{math}\end{math} aint working
                 content = f'\\begin{{equation}}\n{content}\n\\end{{equation}}'
+            else:
+                if not content.startswith('\\begin{equation'):
+                    content = f'\\begin{{equation}}\n{content}\n\\end{{equation}}'
             content = REGEX_LATEX_LABEL.sub('', content)  # just remove the label and stick where it needs to go below:
             content = content.replace(r'\begin{equation}', f'\\begin{{equation}}\n\\label{{{label}}}')
             content = '\n'.join(line for line in content.splitlines() if line.strip())
         elif section == 'literal':
             content = f'\\begin{{verbatim}}\n{content}\n\\end{{verbatim}}'
         elif section == 'code':
-            language = data['language']
+            orig_lang = language = latex.lstlisting_supported(data['language'])
+            if not language:
+                language = 'C++'
+                LOGGER.warning('unsupported lstlisting %r, defaulting to %r', orig_lang, language)
             # FIX: avoid printing squat-u '␣' character instead of spaces between strings - https://tex.stackexchange.com/a/54185
-            content = f'\\begin{{lstlisting}}[language={language.capitalize()}, caption={{{caption}}}, label={{{label}}}, showstringspaces=false]\n{content.strip()}\n\\end{{lstlisting}}'
+            content = f'\\begin{{lstlisting}}[language={language}, caption={{{caption}}}, label={{{label}}}, showstringspaces=false]\n{content.strip()}\n\\end{{lstlisting}}'
         elif section == 'table':
             rows = markdown.table_to_rows(content)
             content = latex.rows_to_latex(rows, caption=caption, label=label, aligned='left')
@@ -565,8 +573,7 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
 
             if section == 'quote':
                 # TODO: currently sane washing all > beginnings
-                content = '\n'.join(line[line.rindex('>') + 1:].strip() for line in content.splitlines())
-                content = f'\\begin{{quotation}}\n{content}\n\\end{{quotation}}'
+                content = '\n'.join(f'\\begin{{quotation}}\n{line[line.rindex(">") + 1:].strip()}\n\\end{{quotation}}' for line in content.splitlines())
             elif section == 'list':
                 postcontent = markdown_list_to_latex(content)
                 content = postcontent
@@ -594,7 +601,7 @@ def doclets_to_latex(doclets, md_filepath, bibliography_output_filepath, labels,
             content = dedent(content).strip()
         content = re.sub(r'(\d)+\%', r'\g<1>\\%', content)  # individual percentages
 
-        if section in set(['latex', 'list', 'header', 'code']):
+        if section in set(['latex', 'list', 'header', 'code', 'table', 'quote']):
             content = f'\n\n{content}\n\n'
         elif 'inline' in section:
             content = f' {content} '

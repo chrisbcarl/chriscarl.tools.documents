@@ -42,13 +42,25 @@
             "program": "${workspaceFolder}/src/chriscarl/tools/md2pdf.py",
             "console": "integratedTerminal",
             "args": [
-                "tests/collateral/md2latex/paper.md",
-                // "tests/collateral/md2latex/paper-simple.md",
-                // "tests/collateral/md2latex/paper-bad.md",
-                "-b", "tests/collateral/md2latex/bibliography.md",
-                "--output-dirpath", "files/examples/md2latex/ieee",
-                "--template", "ieee",
-                "--log-level", "DEBUG",
+                // "tests/collateral/md2latex/paper.md",
+                // // "tests/collateral/md2latex/paper-simple.md",
+                // // "tests/collateral/md2latex/paper-bad.md",
+                // "-b", "tests/collateral/md2latex/bibliography.md",
+                // "--output-dirpath", "files/examples/md2latex/ieee",
+                // "--template", "ieee",
+                // "--log-level", "DEBUG",
+
+                "C:/Users/chris/OneDrive/_recent/SJSU_2026S/MATH-161B/assignments/hw4/2026S-SJSU-MATH161B-hw4-chris_carl.md",
+                "-o", "C:/Users/chris/OneDrive/_recent/SJSU_2026S/MATH-161B/assignments/hw4/render", "-ss", "-alc", "--log-level", "DEBUG"
+
+                // "C:/Users/chris/OneDrive/_recent/SJSU_2026S/CMPE-180D/assignments/hw2/2026S-SJSU-CMPE180D-hw_2-chris_carl.md",
+                // "-o", "C:/Users/chris/OneDrive/_recent/SJSU_2026S/CMPE-180D/assignments/hw2/render",
+                // "-b", "C:/Users/chris/OneDrive/_recent/SJSU_2026S/CMPE-180D/assignments/bibliography.md",
+                // "-ss", "-alc"
+
+                // // TODO: use as a case study for caption/label, doesnt like successive code blocks, probably not successive table blocks either.
+                // "~/OneDrive/_recent/SJSU_2026S/MATH-161B/assignments/hw3/2026S-SJSU-MATH161B-hw03-chris_carl.md",
+                // "-o", "~/OneDrive/_recent/SJSU_2026S/MATH-161B/assignments/hw3/render", "-ss", "-alc",
 
                 // "C:/Users/chris/OneDrive/_recent/SJSU_2026S/CMPE-180D/assignments/hw1/2026S-SJSU-CMPE180D-hw_1-chris_carl.md",
                 // "-b", "C:/Users/chris/OneDrive/_recent/SJSU_2026S/CMPE-180D/assignments/bibliography.md",

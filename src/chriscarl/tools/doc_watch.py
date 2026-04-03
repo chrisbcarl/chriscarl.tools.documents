@@ -21,6 +21,9 @@ Updates:
     2026-02-15 20:45 - tools.doc_watch - started
 
 TODO:
+    - figure out a way to do doc single and doc watch
+        - maybe you can pass a file or nothing or a directory and --watch?
+    - add md_table_pivot
     - markdown table regex doesnt work on tables that end the document
     - the service autoload or something?
     - deal with files that arent matcing the regex?
@@ -128,7 +131,11 @@ def md_table_pretty(filepaths):
     modifieds = []
     error_file_msg = []
     for filepath in filepaths:
-        markdown = read_text_file(filepath)
+        try:
+            markdown = read_text_file(filepath)
+        except Exception as ex:
+            LOGGER.info('could not read "%s" bc %s, just ignoring, we might get them on the next pass', ex)
+            continue
         prior_hash = md5(markdown)
         mos = list(REGEX_MARKDOWN_TABLE.finditer(markdown))
         for mo in reversed(mos):
