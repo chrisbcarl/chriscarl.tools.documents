@@ -10,6 +10,7 @@ tools.shed.tex2pdf is functions that takes LaTeX and converts them to PDF
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-04-03 - tools.shed.tex2pdf - if no bibliography contents, dont bother rendering...
     2026-02-06 - tools.shed.tex2pdf - initial commit
 
 TODO:
@@ -28,6 +29,7 @@ import tempfile
 # third party imports
 
 # project imports
+from chriscarl.core.lib.stdlib.os import abspath, is_file
 from chriscarl.core.lib.stdlib.io import read_text_file
 from chriscarl.core.lib.stdlib.subprocess import kill
 from chriscarl.tools.shed import md2latex
@@ -55,13 +57,24 @@ def run_pdflatex(md_filename, output_dirpath, template):
         bibtex_cmd = 'bibtex'
     else:
         bibtex_cmd = 'biber'
-    cmds = [
-        # ['latexmk', '-C'],  # clean all aux files
-        ['pdflatex', md_filename],
-        [bibtex_cmd, md_filename],
-        ['pdflatex', md_filename],
-        ['pdflatex', md_filename],
-    ]
+
+    bibtex_contents = ''
+    bibtex_filepath = abspath(output_dirpath, f'{md_filename}.bib')
+    if is_file(bibtex_filepath):
+        bibtex_contents = read_text_file(bibtex_filepath).strip()
+    if not bibtex_contents:
+        LOGGER.info('no bibliographical content detected, skipping the 4x commands')
+        cmds = [
+            ['pdflatex', md_filename],
+        ]
+    else:
+        cmds = [
+            # ['latexmk', '-C'],  # clean all aux files
+            ['pdflatex', md_filename],
+            [bibtex_cmd, md_filename],
+            ['pdflatex', md_filename],
+            ['pdflatex', md_filename],
+        ]
     timeout = 60
     for c, cmd in enumerate(cmds):
         pid = -1

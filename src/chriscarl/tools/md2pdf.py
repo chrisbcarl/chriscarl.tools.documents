@@ -25,6 +25,7 @@ Examples:
         -ss  # skip spellcheck
 
 Updates:
+    2026-04-03 - tools.md2pdf - deleting prior work files helps
     2026-02-06 - tools.md2pdf - initial commit
 '''
 
@@ -96,6 +97,13 @@ def md2pdf(
     debug=False,
 ):
     # type: (str, str, Optional[List[str]], str, bool, bool, bool, bool, bool, bool) -> Tuple[str, str, str]
+    md_filename = filename(md_filepath)
+    pdf_output_filepath = abspath(output_dirpath, f'{md_filename}.pdf')
+
+    LOGGER.info('deleting previous unnecessary work files...')
+    md2latex.delete_latex_work_files(output_dirpath, md_filename, extra=None)
+
+    LOGGER.info('markdown to latex...')
     bibliography_output_filepath, tex_output_filepath, download_url_filepaths, headers = md2latex_tool.markdown_to_latex(
         md_filepath,
         output_dirpath,
@@ -107,9 +115,6 @@ def md2pdf(
         auto_label_caption=auto_label_caption,
         debug=debug,
     )
-
-    md_filename = filename(md_filepath)
-    pdf_output_filepath = abspath(output_dirpath, f'{md_filename}.pdf')
 
     phase, errors, warnings = 'download', [], []
     LOGGER.info('running %r', phase)
