@@ -35,7 +35,23 @@ ipynb
 
 md2pdf
 
+    pandoc:
+        search for
+        "                -" for deeply nested stuff
+
+        pandoc guard find unicode first and deal with it
+
     bugs
+        support list in yaml geometry:
+            - "margin=0.25in"
+            # - landscape
+        etc.
+
+        ```
+        - inline `markdown` in a list
+        - bulleted `inline` is a problem
+        ```
+
         having 1 literal in the open like `hello` and another in the open like ```asdfasdf``` and -alc causes lit-1 to appear twice...
 
         problem with it thinking that these are tables...

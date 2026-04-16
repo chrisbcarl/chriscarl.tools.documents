@@ -134,7 +134,7 @@ def md_table_pretty(filepaths):
         try:
             markdown = read_text_file(filepath)
         except Exception as ex:
-            LOGGER.info('could not read "%s" bc %s, just ignoring, we might get them on the next pass', ex)
+            LOGGER.info('could not read "%s" bc %s, just ignoring, we might get them on the next pass', filepath, ex)
             continue
         prior_hash = md5(markdown)
         mos = list(REGEX_MARKDOWN_TABLE.finditer(markdown))

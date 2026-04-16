@@ -146,7 +146,7 @@ def combine(input_filepaths, output_filepath, pretty=True, indent=4):
     write_text_file(output_filepath, bib)
     LOGGER.info('wrote "%s"', output_filepath)
 
-    return bib, labels
+    return bib.strip(), labels
 
 
 def convert(input_filepaths, output_dirpath, pretty=True, indent=4, overwrite=False):
