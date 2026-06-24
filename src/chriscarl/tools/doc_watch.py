@@ -13,7 +13,7 @@ Examples:
     $ doc-watch files   table.md    --md-table-pretty --md-auto-latex
 
 Updates:
-    2026-06-24 11:25 - tools.doc_watch - FIXED:
+    2026-06-24 11:25 - tools.doc_watch - NOTE: markdown-processing a little janky
     2026-06-24 11:10 - tools.doc_watch - added md_table_pivot
     2026-06-23 22:09 - tools.doc_watch - added dirs and files modes, have to rejigger a few projects but thats fine
     2026-02-27 16:42 - tools.doc_watch - finished toolification
