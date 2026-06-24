@@ -13,14 +13,14 @@ Examples:
     $ doc-watch files   table.md    --md-table-pretty --md-auto-latex
 
 Updates:
-    2026-02-27 22:09 - tools.doc_watch - added dirs and files modes, have to rejigger a few projects but thats fine
+    2026-06-24 11:10 - tools.doc_watch - added md_table_pivot
+    2026-06-23 22:09 - tools.doc_watch - added dirs and files modes, have to rejigger a few projects but thats fine
     2026-02-27 16:42 - tools.doc_watch - finished toolification
                        tools.doc_watch - from a user perspective this works every very well.
     2026-02-15 21:58 - tools.doc_watch - finished first pass, the idea is to have some kind of doc watcher and you invoke it like this:
     2026-02-15 20:45 - tools.doc_watch - started
 
 TODO:
-    - add md_table_pivot
     - markdown table regex doesnt work on tables that end the document
     - the service autoload or something?
     - deal with files that arent matcing the regex?
@@ -47,7 +47,7 @@ from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, walk_regex, relpath  # make_dirpath,
 from chriscarl.core.lib.stdlib.io import read_text_file, write_text_file
 from chriscarl.core.lib.stdlib.hashlib import md5
-from chriscarl.core.functors.parse.markdown import table_prettify
+from chriscarl.core.functors.parse import markdown as md
 from chriscarl.core.types.str import indent, find_lineno_index
 
 SCRIPT_RELPATH = 'chriscarl/tools/doc_watch.py'
@@ -97,7 +97,8 @@ class Arguments:
     # common
     # common - funcs
     md_table_pretty: bool = False
-    md_auto_latex: bool = False
+    md_table_pivot: bool = False
+    # TODO: md_auto_latex: bool = False
     # common - misc
     debug: bool = False
     log_level: str = 'INFO'
@@ -114,7 +115,8 @@ class Arguments:
     def add_common_funcs(cls, parser):
         funcs = parser.add_argument_group('funcs')
         funcs.add_argument('--md-table-pretty', action='store_true', help='auto-format markdown tables?')
-        funcs.add_argument('--md-auto-latex', action='store_true', help='auto-wrap latex looking stuff?')
+        funcs.add_argument('--md-table-pivot', action='store_true', help='pivot and auto-format markdown tables?')
+        # funcs.add_argument('--md-auto-latex', action='store_true', help='auto-wrap latex looking stuff?')
 
     @classmethod
     def argparser(cls):
@@ -166,13 +168,13 @@ class Arguments:
 REGEX_MARKDOWN_TABLE = re.compile(r'\n(?P<indent>[ \t]*)\|(?P<table>.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
 
 
-def md_table_pretty(filepaths):
-    # type: (List[str]) -> Tuple[List[str], List[str]]
-    '''return a list of successfully modified files'''
+def find_replace_md_tables(filepaths, func):
+    # type: (List[str], Callable[[str], str]) -> Tuple[List[str], List[Tuple[str, str]]]
+    '''return a list, list of successfully, errored modified files'''
     modifieds = []
     error_file_msgs = []
     for filepath in filepaths:
-        LOGGER.debug('"%s"', filepath)
+        LOGGER.debug('%s - "%s"', func, filepath)
         try:
             markdown = read_text_file(filepath)
         except Exception as ex:
@@ -188,11 +190,11 @@ def md_table_pretty(filepaths):
             table = f'|{groups["table"]}|'
 
             try:
-                pretty = table_prettify(table)
+                pretty = func(table)
                 replacement = indent(pretty, indent=' ' * indentation)
             except Exception as ex:
                 lineno = list(find_lineno_index(table, markdown))[0][0] + 1
-                error_file_msgs.append((filepath, f'couldnt prettify! {ex}, "{filepath}", line {lineno}'))
+                error_file_msgs.append((filepath, f'{func.__name__!r} failed! {ex}, "{filepath}", line {lineno}'))
                 continue
 
             markdown = f'{markdown[:start]}{replacement}\n\n{markdown[end:]}'
@@ -203,15 +205,24 @@ def md_table_pretty(filepaths):
     return modifieds, error_file_msgs
 
 
+def md_table_pretty(filepaths):
+    return find_replace_md_tables(filepaths, md.table_prettify)
+
+
+def md_table_pivot(filepaths):
+    return find_replace_md_tables(filepaths, md.table_pivot)
+
+
 KNOWN_FUNCS = {
     md_table_pretty: r'.*\.md$',
+    md_table_pivot: r'.*\.md$',
 }
 ERROR_PRINTED = {}  # type: Dict[str, str]
 FILEPATHS_MODIFIED = {}  # type: Dict[str, float]
 
 
 def process_files(filepaths, used_funcs, cwd=os.getcwd()):
-    # type: (List[str], List[Callable[[List[str]], Tuple[List[str], List[str]]]], str) -> Tuple[List[str], List[str]]
+    # type: (List[str], List[Callable[[List[str]], Tuple[List[str], List[Tuple[str, str]]]]], str) -> Tuple[List[str], List[Tuple[str, str]]]
     actually_modified = set()
     all_successes, all_errors = [], []
     for func in used_funcs:

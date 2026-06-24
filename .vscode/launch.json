@@ -107,9 +107,9 @@
             "program": "${workspaceFolder}/src/chriscarl/tools/doc_watch.py",
             "console": "integratedTerminal",
             "args": [
-                // "dirs", "./",
-                "files", "ignoreme/test/md-table.md",
-                "--md-table-pretty",
+                // "dirs", "./", "--md-table-pretty",
+                // "files", "ignoreme/test/md-table.md", "--md-table-pretty",
+                // "files", "ignoreme/test/md-pivot.md", "--md-table-pivot",
                 // "--log-level", "DEBUG"
             ],
             "justMyCode": true,
