@@ -109,7 +109,7 @@
             "args": [
                 // "dirs", "./", "--md-table-pretty",
                 // "files", "ignoreme/test/md-table.md", "--md-table-pretty",
-                // "files", "ignoreme/test/md-pivot.md", "--md-table-pivot",
+                "files", "ignoreme/test/md-pivot.md", "--md-table-pivot",
                 // "--log-level", "DEBUG"
             ],
             "justMyCode": true,

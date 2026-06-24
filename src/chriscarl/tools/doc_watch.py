@@ -13,6 +13,7 @@ Examples:
     $ doc-watch files   table.md    --md-table-pretty --md-auto-latex
 
 Updates:
+    2026-06-24 11:25 - tools.doc_watch - FIXED:
     2026-06-24 11:10 - tools.doc_watch - added md_table_pivot
     2026-06-23 22:09 - tools.doc_watch - added dirs and files modes, have to rejigger a few projects but thats fine
     2026-02-27 16:42 - tools.doc_watch - finished toolification
@@ -21,7 +22,6 @@ Updates:
     2026-02-15 20:45 - tools.doc_watch - started
 
 TODO:
-    - markdown table regex doesnt work on tables that end the document
     - the service autoload or something?
     - deal with files that arent matcing the regex?
 '''
@@ -165,6 +165,7 @@ class Arguments:
         return {fie.name: getattr(self, fie.name) for fie in fields(self)}  # escaped for template reasons
 
 
+# NOTE: markdown-processing a little janky, requires prepending a clean table with garbage first like "plz\n<table>\n\nplz"
 REGEX_MARKDOWN_TABLE = re.compile(r'\n(?P<indent>[ \t]*)\|(?P<table>.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
 
 
@@ -181,6 +182,7 @@ def find_replace_md_tables(filepaths, func):
             LOGGER.info('could not read "%s" bc %s, just ignoring, we might get them on the next pass', filepath, ex)
             continue
         prior_hash = md5(markdown)
+        markdown = f'plz\n{markdown}\n\nplz'  # NOTE: markdown-processing a little janky
         mos = list(REGEX_MARKDOWN_TABLE.finditer(markdown))
         for mo in reversed(mos):
             start, end = mo.span()
@@ -198,6 +200,8 @@ def find_replace_md_tables(filepaths, func):
                 continue
 
             markdown = f'{markdown[:start]}{replacement}\n\n{markdown[end:]}'
+
+        markdown = markdown[4:-5]  # NOTE: markdown-processing a little janky
         replaced_hash = md5(markdown)
         if prior_hash != replaced_hash:
             write_text_file(filepath, markdown)
