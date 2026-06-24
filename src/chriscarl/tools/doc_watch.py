@@ -13,7 +13,7 @@ Examples:
     $ doc-watch files   table.md    --md-table-pretty --md-auto-latex
 
 Updates:
-    2026-02-27 16:42 - tools.doc_watch - added dirs and files modes, have to rejigger a few projects but thats fine
+    2026-02-27 22:09 - tools.doc_watch - added dirs and files modes, have to rejigger a few projects but thats fine
     2026-02-27 16:42 - tools.doc_watch - finished toolification
                        tools.doc_watch - from a user perspective this works every very well.
     2026-02-15 21:58 - tools.doc_watch - finished first pass, the idea is to have some kind of doc watcher and you invoke it like this:
@@ -31,7 +31,7 @@ from __future__ import absolute_import, print_function, division, with_statement
 import os
 import sys
 import logging
-from typing import List, Generator, Optional, Tuple, Dict
+from typing import List, Generator, Optional, Tuple, Dict, Callable
 from dataclasses import dataclass, field, fields
 from argparse import ArgumentParser
 import re
@@ -188,7 +188,8 @@ def md_table_pretty(filepaths):
             table = f'|{groups["table"]}|'
 
             try:
-                replacement = indent(table_prettify(table), indent=' ' * indentation)
+                pretty = table_prettify(table)
+                replacement = indent(pretty, indent=' ' * indentation)
             except Exception as ex:
                 lineno = list(find_lineno_index(table, markdown))[0][0] + 1
                 error_file_msgs.append((filepath, f'couldnt prettify! {ex}, "{filepath}", line {lineno}'))
@@ -205,6 +206,42 @@ def md_table_pretty(filepaths):
 KNOWN_FUNCS = {
     md_table_pretty: r'.*\.md$',
 }
+ERROR_PRINTED = {}  # type: Dict[str, str]
+FILEPATHS_MODIFIED = {}  # type: Dict[str, float]
+
+
+def process_files(filepaths, used_funcs, cwd=os.getcwd()):
+    # type: (List[str], List[Callable[[List[str]], Tuple[List[str], List[str]]]], str) -> Tuple[List[str], List[str]]
+    actually_modified = set()
+    all_successes, all_errors = [], []
+    for func in used_funcs:
+        successes, failures = func(filepaths)
+        error_file_msgs = [(relpath(tpl[0], cwd=cwd, posix=True), tpl[1]) for tpl in failures]
+        if successes:
+            LOGGER.info('%r succeeded on %d files', func.__name__, len(successes))
+            for success in successes:
+                # TODO: on better logging levels
+                rel = relpath(success, cwd=cwd, posix=True)
+                all_successes.append(rel)
+                LOGGER.info('    - %r: %s', func.__name__, rel)
+                if success in ERROR_PRINTED:
+                    del ERROR_PRINTED[success]  # clear the error
+        if error_file_msgs:
+            topline_printed = False
+            for file, msg in error_file_msgs:
+                if file not in ERROR_PRINTED:
+                    rel = relpath(file, cwd=cwd, posix=True)
+                    if not topline_printed:
+                        LOGGER.error('%r failed on %d files', func.__name__, len(error_file_msgs))
+                        topline_printed = True
+
+                    LOGGER.error('    - %r: "%s" | %s', func.__name__, rel, msg)
+                    ERROR_PRINTED[file] = msg
+                    all_errors.append(f'{func.__name__!r}: "{rel}" | {msg}')
+        actually_modified = actually_modified.union(successes)
+
+    FILEPATHS_MODIFIED.update({filepath: os.path.getmtime(filepath) for filepath in actually_modified})
+    return all_successes, all_errors
 
 
 def main():
@@ -228,81 +265,38 @@ def main():
 
     # scan for files
     LOGGER.debug('getting mtimes')
-    filepaths_modified = {}  # type: Dict[str, float]
     if args.mode == Modes.files:
         for filepath in args.filepaths:
             if not any(regex.search(filepath) for regex in used_regexes):
                 raise RuntimeError(f'passed file {filepath!r} does not match any known')
-            filepaths_modified[filepath] = os.path.getmtime(filepath)
+            FILEPATHS_MODIFIED[filepath] = os.path.getmtime(filepath)
 
     elif args.mode == Modes.dirs:
         for dirpath in args.dirpaths:
             for key in used_patterns:
                 for filepath in walk_regex(dirpath, key, ignore=args.exclude, relpath=False):
-                    filepaths_modified[filepath] = os.path.getmtime(filepath)
+                    FILEPATHS_MODIFIED[filepath] = os.path.getmtime(filepath)
 
-    LOGGER.debug('filepaths_modified: %s', filepaths_modified)
+    LOGGER.debug('FILEPATHS_MODIFIED: %s', FILEPATHS_MODIFIED)
 
-    error_printed = {}  # type: Dict[str, str]
-
-    def process_files(filepaths):
-        # type: (List[str]) -> Tuple[List[str], List[str]]
-        actually_modified = set()
-        all_successes, all_errors = [], []
-        for func in used_funcs:
-            successes, failures = func(filepaths)
-            error_file_msgs = [(relpath(tpl[0], cwd=cwd, posix=True), tpl[1]) for tpl in failures]
-            if successes:
-                # LOGGER.info('%r succeeded on %d files', func.__name__, len(successes))
-                for success in successes:
-                    # TODO: on better logging levels
-                    rel = relpath(success, cwd=cwd, posix=True)
-                    all_successes.append(rel)
-                    LOGGER.info('%r: %s', func.__name__, rel)
-                    if success in error_printed:
-                        del error_printed[success]  # clear the error
-            if error_file_msgs:
-                topline_printed = False
-                for file, msg in error_file_msgs:
-                    if file not in error_printed:
-                        if not topline_printed:
-                            LOGGER.warning('%r failed on %d files', func.__name__, len(error_file_msgs))
-                            topline_printed = True
-
-                        LOGGER.warning('    - %r: %s', func.__name__, msg)
-                        error_printed[file] = msg
-                        all_errors.append(f'{func.__name__!r}: "{relpath(file, cwd=cwd, posix=True)}" {msg}')
-            actually_modified = actually_modified.union(successes)
-
-        filepaths_modified.update({filepath: os.path.getmtime(filepath) for filepath in actually_modified})
-        return all_successes, all_errors
-
-    if not filepaths_modified:
+    if not FILEPATHS_MODIFIED:
         raise RuntimeError('not enough files or dirpaths to actually run anything!')
 
     try:
         if args.mode == Modes.files:
-            all_successes, all_errors = process_files(list(filepaths_modified))
-            if all_successes:
-                LOGGER.info('- %d successes:', len(all_successes))
-                for success in all_successes:
-                    LOGGER.info('    - "%s"', success)
-            if all_errors:
-                LOGGER.info('- %d errors:', len(all_errors))
-                for error in all_errors:
-                    LOGGER.error('    - "%s"', error)
+            process_files(list(FILEPATHS_MODIFIED), used_funcs, cwd=cwd)
         elif args.mode == Modes.dirs:
             while True:
                 modified_since_last = []
-                for filepath in filepaths_modified:
+                for filepath in FILEPATHS_MODIFIED:
                     modified = os.path.getmtime(filepath)
-                    if (filepath not in filepaths_modified  # new file created
-                        or modified > filepaths_modified[filepath]  # modified more recently
+                    if (filepath not in FILEPATHS_MODIFIED  # new file created
+                        or modified > FILEPATHS_MODIFIED[filepath]  # modified more recently
                         ):
                         modified_since_last.append(filepath)
                 if modified_since_last:
-                    LOGGER.debug('filepaths_modified: %s', filepaths_modified)
-                    process_files(modified_since_last)
+                    LOGGER.debug('FILEPATHS_MODIFIED: %s', FILEPATHS_MODIFIED)
+                    process_files(modified_since_last, used_funcs, cwd=cwd)
                 time.sleep(0.1)
 
     except KeyboardInterrupt:
