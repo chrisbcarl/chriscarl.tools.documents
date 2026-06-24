@@ -9,20 +9,17 @@ Description:
 tools.doc_watch is a tool which polls a list of files and modifies them according to some heuristic
 
 Examples:
-    $ doc-watch `
-        --md-table-pretty `
-        --md-auto-latex `
-        --exclude known-file.md
+    $ doc-watch dirs    ./          --md-table-pretty --md-auto-latex --exclude known-file.md
+    $ doc-watch files   table.md    --md-table-pretty --md-auto-latex
 
 Updates:
+    2026-02-27 16:42 - tools.doc_watch - added dirs and files modes, have to rejigger a few projects but thats fine
     2026-02-27 16:42 - tools.doc_watch - finished toolification
                        tools.doc_watch - from a user perspective this works every very well.
     2026-02-15 21:58 - tools.doc_watch - finished first pass, the idea is to have some kind of doc watcher and you invoke it like this:
     2026-02-15 20:45 - tools.doc_watch - started
 
 TODO:
-    - figure out a way to do doc single and doc watch
-        - maybe you can pass a file or nothing or a directory and --watch?
     - add md_table_pivot
     - markdown table regex doesnt work on tables that end the document
     - the service autoload or something?
@@ -34,11 +31,12 @@ from __future__ import absolute_import, print_function, division, with_statement
 import os
 import sys
 import logging
-from typing import List, Generator, Optional, Tuple
+from typing import List, Generator, Optional, Tuple, Dict
 from dataclasses import dataclass, field, fields
 from argparse import ArgumentParser
 import re
 import time
+import enum
 
 # third party imports
 
@@ -46,7 +44,7 @@ import time
 from chriscarl.core.constants import TEMP_DIRPATH
 from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
-from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, walk_regex
+from chriscarl.core.lib.stdlib.os import abspath, walk_regex, relpath  # make_dirpath,
 from chriscarl.core.lib.stdlib.io import read_text_file, write_text_file
 from chriscarl.core.lib.stdlib.hashlib import md5
 from chriscarl.core.functors.parse.markdown import table_prettify
@@ -68,8 +66,20 @@ DEFAULT_FIB_INIT = [0, 1]
 DEFAULT_OUTPUT_DIRPATH = abspath(TEMP_DIRPATH, 'tools.doc_watch')
 DEFAULT_LOG_FILEPATH = abspath(TEMP_DIRPATH, 'tools.doc_watch.log')
 
+
 # tool constants
-DEFAULT_DIRPATH = abspath(os.getcwd())
+class Modes(enum.Enum):
+    dirs = enum.auto()
+    files = enum.auto()
+
+    def __str__(self):
+        return f'{self.name}'
+
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return str(self) == other
+        else:
+            return super().__eq__(other)
 
 
 @dataclass
@@ -77,34 +87,65 @@ class Arguments:
     '''
     Document this class with any specifics for the process function.
     '''
-    # app
-    md_table_pretty: List[str] = field(default_factory=lambda: [])
-    md_auto_latex: List[str] = field(default_factory=lambda: [])
+    # modes
+    mode: str = ''
+    # modes - dirs
+    dirpaths: List[str] = field(default_factory=lambda: [])
     exclude: List[str] = field(default_factory=lambda: [])
-    # misc
+    # modes - files
+    filepaths: List[str] = field(default_factory=lambda: [])
+    # common
+    # common - funcs
+    md_table_pretty: bool = False
+    md_auto_latex: bool = False
+    # common - misc
     debug: bool = False
-    dirpath: str = DEFAULT_OUTPUT_DIRPATH
     log_level: str = 'INFO'
     log_filepath: str = DEFAULT_LOG_FILEPATH
+
+    @classmethod
+    def add_common_arguments(cls, parser):
+        misc = parser.add_argument_group('misc')
+        misc.add_argument('--debug', action='store_true', help='chose to print debug info')
+        misc.add_argument('--log-level', type=str, default='INFO', choices=NAME_TO_LEVEL, help='log level?')
+        misc.add_argument('--log-filepath', type=str, default=DEFAULT_LOG_FILEPATH, help='log filepath?')
+
+    @classmethod
+    def add_common_funcs(cls, parser):
+        funcs = parser.add_argument_group('funcs')
+        funcs.add_argument('--md-table-pretty', action='store_true', help='auto-format markdown tables?')
+        funcs.add_argument('--md-auto-latex', action='store_true', help='auto-wrap latex looking stuff?')
 
     @classmethod
     def argparser(cls):
         # type: () -> ArgumentParser
         parser = ArgumentParser(prog=SCRIPT_NAME, description=__doc__, formatter_class=ArgparseNiceFormat)
-        app = parser.add_argument_group('app')
-        app.add_argument('--md-table-pretty', type=str, nargs='*', default=[], help='auto-format markdown tables?')
-        app.add_argument('--md-auto-latex', type=str, nargs='*', default=[], help='auto-wrap latex looking stuff?')
-        app.add_argument('--exclude', type=str, nargs='*', default=[], help='auto-wrap latex looking stuff?')
-        app.add_argument('--dirpath', '-d', type=str, default=DEFAULT_DIRPATH, help='where do you want to monitor?')
+        cls.add_common_arguments(parser)
+        subparser_root = parser.add_subparsers(help='which mode do you want?')
 
-        misc = parser.add_argument_group('misc')
-        misc.add_argument('--debug', action='store_true', help='chose to print debug info')
-        misc.add_argument('--log-level', type=str, default='INFO', choices=NAME_TO_LEVEL, help='log level?')
-        misc.add_argument('--log-filepath', type=str, default=DEFAULT_LOG_FILEPATH, help='log filepath?')
+        # dirs
+        dirs = subparser_root.add_parser(str(Modes.dirs), description='long-running dirs which loops repeatedly on a directory with functions', formatter_class=ArgparseNiceFormat)
+        dirs.set_defaults(mode='dirs')
+        group = dirs.add_argument_group('core')
+        group.add_argument('dirpaths', type=str, nargs='*', help='where do you want to monitor?')
+        group.add_argument('--exclude', type=str, nargs='*', default=[], help='auto-wrap latex looking stuff?')
+        cls.add_common_funcs(dirs)
+        cls.add_common_arguments(dirs)
+
+        # files
+        files = subparser_root.add_parser(
+            str(Modes.files), description='long-running files which loops repeatedly on a directory with functions', formatter_class=ArgparseNiceFormat
+        )
+        files.set_defaults(mode='files')
+        group = files.add_argument_group('core')
+        group.add_argument('filepaths', type=str, nargs='*', help='which files do you want to process?')
+        cls.add_common_funcs(files)
+        cls.add_common_arguments(files)
+
         return parser
 
     def process(self):
-        make_dirpath(self.dirpath)
+        # make_dirpath(self.dirpath)
         if self.debug:
             self.log_level = 'DEBUG'
         configure_ez(level=self.log_level, filepath=self.log_filepath)
@@ -129,8 +170,9 @@ def md_table_pretty(filepaths):
     # type: (List[str]) -> Tuple[List[str], List[str]]
     '''return a list of successfully modified files'''
     modifieds = []
-    error_file_msg = []
+    error_file_msgs = []
     for filepath in filepaths:
+        LOGGER.debug('"%s"', filepath)
         try:
             markdown = read_text_file(filepath)
         except Exception as ex:
@@ -149,7 +191,7 @@ def md_table_pretty(filepaths):
                 replacement = indent(table_prettify(table), indent=' ' * indentation)
             except Exception as ex:
                 lineno = list(find_lineno_index(table, markdown))[0][0] + 1
-                error_file_msg.append((filepath, f'couldnt prettify! {ex}, "{filepath}", line {lineno}'))
+                error_file_msgs.append((filepath, f'couldnt prettify! {ex}, "{filepath}", line {lineno}'))
                 continue
 
             markdown = f'{markdown[:start]}{replacement}\n\n{markdown[end:]}'
@@ -157,11 +199,11 @@ def md_table_pretty(filepaths):
         if prior_hash != replaced_hash:
             write_text_file(filepath, markdown)
             modifieds.append(filepath)
-    return modifieds, error_file_msg
+    return modifieds, error_file_msgs
 
 
 KNOWN_FUNCS = {
-    r'.*\.md$': [md_table_pretty, ],
+    md_table_pretty: r'.*\.md$',
 }
 
 
@@ -174,46 +216,94 @@ def main():
 
     args = Arguments.parse(parser=parser)
 
+    cwd = abspath(os.getcwd())
+
+    # identify what patterns we're interested in
+    used_funcs = [func for func in KNOWN_FUNCS if getattr(args, func.__name__) == True]
+    used_patterns = set(KNOWN_FUNCS[func] for func in used_funcs)
+    used_regexes = [re.compile(pattern) for pattern in used_patterns]
+
+    if not used_funcs:
+        raise RuntimeError('no functions passed!')
+
+    # scan for files
     LOGGER.debug('getting mtimes')
-    last_modified_dict = {key: {filepath: os.path.getmtime(filepath) for filepath in walk_regex(args.dirpath, key, ignore=args.exclude)} for key in KNOWN_FUNCS}
-    error_printed = {}
+    filepaths_modified = {}  # type: Dict[str, float]
+    if args.mode == Modes.files:
+        for filepath in args.filepaths:
+            if not any(regex.search(filepath) for regex in used_regexes):
+                raise RuntimeError(f'passed file {filepath!r} does not match any known')
+            filepaths_modified[filepath] = os.path.getmtime(filepath)
+
+    elif args.mode == Modes.dirs:
+        for dirpath in args.dirpaths:
+            for key in used_patterns:
+                for filepath in walk_regex(dirpath, key, ignore=args.exclude, relpath=False):
+                    filepaths_modified[filepath] = os.path.getmtime(filepath)
+
+    LOGGER.debug('filepaths_modified: %s', filepaths_modified)
+
+    error_printed = {}  # type: Dict[str, str]
+
+    def process_files(filepaths):
+        # type: (List[str]) -> Tuple[List[str], List[str]]
+        actually_modified = set()
+        all_successes, all_errors = [], []
+        for func in used_funcs:
+            successes, failures = func(filepaths)
+            error_file_msgs = [(relpath(tpl[0], cwd=cwd, posix=True), tpl[1]) for tpl in failures]
+            if successes:
+                # LOGGER.info('%r succeeded on %d files', func.__name__, len(successes))
+                for success in successes:
+                    # TODO: on better logging levels
+                    rel = relpath(success, cwd=cwd, posix=True)
+                    all_successes.append(rel)
+                    LOGGER.info('%r: %s', func.__name__, rel)
+                    if success in error_printed:
+                        del error_printed[success]  # clear the error
+            if error_file_msgs:
+                topline_printed = False
+                for file, msg in error_file_msgs:
+                    if file not in error_printed:
+                        if not topline_printed:
+                            LOGGER.warning('%r failed on %d files', func.__name__, len(error_file_msgs))
+                            topline_printed = True
+
+                        LOGGER.warning('    - %r: %s', func.__name__, msg)
+                        error_printed[file] = msg
+                        all_errors.append(f'{func.__name__!r}: "{relpath(file, cwd=cwd, posix=True)}" {msg}')
+            actually_modified = actually_modified.union(successes)
+
+        filepaths_modified.update({filepath: os.path.getmtime(filepath) for filepath in actually_modified})
+        return all_successes, all_errors
+
+    if not filepaths_modified:
+        raise RuntimeError('not enough files or dirpaths to actually run anything!')
+
     try:
-        while True:
-            for key, funcs in KNOWN_FUNCS.items():
-                key_filepaths = walk_regex(args.dirpath, key, ignore=args.exclude)
+        if args.mode == Modes.files:
+            all_successes, all_errors = process_files(list(filepaths_modified))
+            if all_successes:
+                LOGGER.info('- %d successes:', len(all_successes))
+                for success in all_successes:
+                    LOGGER.info('    - "%s"', success)
+            if all_errors:
+                LOGGER.info('- %d errors:', len(all_errors))
+                for error in all_errors:
+                    LOGGER.error('    - "%s"', error)
+        elif args.mode == Modes.dirs:
+            while True:
                 modified_since_last = []
-                for filepath in key_filepaths:
+                for filepath in filepaths_modified:
                     modified = os.path.getmtime(filepath)
-                    if (filepath not in last_modified_dict[key]  # new file created
-                        or modified > last_modified_dict[key][filepath]  # modified more recently
+                    if (filepath not in filepaths_modified  # new file created
+                        or modified > filepaths_modified[filepath]  # modified more recently
                         ):
                         modified_since_last.append(filepath)
-
-                actually_modified = set()
-                for func in funcs:
-                    successes, failures = func(modified_since_last)
-                    successes = [os.path.relpath(fp, args.dirpath).replace('\\', '/') for fp in successes]
-                    error_file_msg = [(os.path.relpath(tpl[0], args.dirpath).replace('\\', '/'), tpl[1]) for tpl in failures]
-                    if successes:
-                        LOGGER.info('%r succeeded on %d files', func.__name__, len(successes))
-                        for success in successes:
-                            LOGGER.warning('    - %r: %s', func.__name__, success)
-                            if success in error_printed:
-                                del error_printed[success]  # clear the error
-                    if error_file_msg:
-                        topline_printed = False
-                        for file, msg in error_file_msg:
-                            if file not in error_printed:
-                                if not topline_printed:
-                                    LOGGER.warning('%r failed on %d files', func.__name__, len(error_file_msg))
-                                    topline_printed = True
-
-                                LOGGER.warning('    - %r: %s', func.__name__, msg)
-                                error_printed[file] = msg
-                    actually_modified = actually_modified.union(successes)
-
-                last_modified_dict[key].update({filepath: os.path.getmtime(filepath) for filepath in actually_modified})
-            time.sleep(0.1)
+                if modified_since_last:
+                    LOGGER.debug('filepaths_modified: %s', filepaths_modified)
+                    process_files(modified_since_last)
+                time.sleep(0.1)
 
     except KeyboardInterrupt:
         LOGGER.info('ctrl+c detected')
