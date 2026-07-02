@@ -11,8 +11,10 @@ tools.doc_watch is a tool which polls a list of files and modifies them accordin
 Examples:
     $ doc-watch dirs    ./          --md-table-pretty --md-auto-latex --exclude known-file.md
     $ doc-watch files   table.md    --md-table-pretty --md-auto-latex
+    $ doc-watch files   table.md    --md-tables-to-csvs  # leaves behind csvs for each md table
 
 Updates:
+    2026-07-02 12:54 - tools.doc_watch - added md_tables_to_csvs
     2026-06-24 11:25 - tools.doc_watch - NOTE: markdown-processing a little janky
     2026-06-24 11:10 - tools.doc_watch - added md_table_pivot
     2026-06-23 22:09 - tools.doc_watch - added dirs and files modes, have to rejigger a few projects but thats fine
@@ -22,6 +24,7 @@ Updates:
     2026-02-15 20:45 - tools.doc_watch - started
 
 TODO:
+    - BUG: finding tables EXACTLY still isn't working...
     - the service autoload or something?
     - deal with files that arent matcing the regex?
 '''
@@ -98,6 +101,7 @@ class Arguments:
     # common - funcs
     md_table_pretty: bool = False
     md_table_pivot: bool = False
+    md_tables_to_csvs: bool = False
     # TODO: md_auto_latex: bool = False
     # common - misc
     debug: bool = False
@@ -116,6 +120,7 @@ class Arguments:
         funcs = parser.add_argument_group('funcs')
         funcs.add_argument('--md-table-pretty', action='store_true', help='auto-format markdown tables?')
         funcs.add_argument('--md-table-pivot', action='store_true', help='pivot and auto-format markdown tables?')
+        funcs.add_argument('--md-tables-to-csvs', action='store_true', help='find and extract the tables to csvs?')
         # funcs.add_argument('--md-auto-latex', action='store_true', help='auto-wrap latex looking stuff?')
 
     @classmethod
@@ -169,11 +174,12 @@ class Arguments:
 REGEX_MARKDOWN_TABLE = re.compile(r'\n(?P<indent>[ \t]*)\|(?P<table>.+?)\|\n\n', flags=re.DOTALL | re.MULTILINE)
 
 
-def find_replace_md_tables(filepaths, func):
-    # type: (List[str], Callable[[str], str]) -> Tuple[List[str], List[Tuple[str, str]]]
+def find_md_tables_and(filepaths, func, replace=True, extract=False):
+    # type: (List[str], Callable[[str], str], bool, bool) -> Tuple[List[str], List[Tuple[str, str]], list]
     '''return a list, list of successfully, errored modified files'''
     modifieds = []
     error_file_msgs = []
+    returns = []
     for filepath in filepaths:
         LOGGER.debug('%s - "%s"', func, filepath)
         try:
@@ -191,35 +197,63 @@ def find_replace_md_tables(filepaths, func):
             indentation = len(groups['indent'])
             table = f'|{groups["table"]}|'
 
-            try:
-                pretty = func(table)
-                replacement = indent(pretty, indent=' ' * indentation)
-            except Exception as ex:
-                lineno = list(find_lineno_index(table, markdown))[0][0] + 1
-                error_file_msgs.append((filepath, f'{func.__name__!r} failed! {ex}, "{filepath}", line {lineno}'))
-                continue
+            if replace:
+                try:
+                    pretty = func(table)
+                    replacement = indent(pretty, indent=' ' * indentation)
+                except Exception as ex:
+                    lineno = list(find_lineno_index(table, markdown))[0][0] + 1
+                    error_file_msgs.append((filepath, f'{func.__name__!r} failed! {ex}, "{filepath}", line {lineno}'))
+                    continue
 
-            markdown = f'{markdown[:start]}{replacement}\n\n{markdown[end:]}'
+                markdown = f'{markdown[:start]}{replacement}\n\n{markdown[end:]}'
+            if extract:
+                print(f'|||||\n{table}\n|||||')
+                returns.insert(0, table)
 
         markdown = markdown[4:-5]  # NOTE: markdown-processing a little janky
         replaced_hash = md5(markdown)
         if prior_hash != replaced_hash:
             write_text_file(filepath, markdown)
             modifieds.append(filepath)
-    return modifieds, error_file_msgs
+    return modifieds, error_file_msgs, returns
 
 
 def md_table_pretty(filepaths):
-    return find_replace_md_tables(filepaths, md.table_prettify)
+    modifieds, error_file_msgs, _ = find_md_tables_and(filepaths, md.table_prettify, replace=True)
+    return modifieds, error_file_msgs
 
 
 def md_table_pivot(filepaths):
-    return find_replace_md_tables(filepaths, md.table_pivot)
+    modifieds, error_file_msgs, _ = find_md_tables_and(filepaths, md.table_pivot, replace=True)
+    return modifieds, error_file_msgs
+
+
+def md_tables_to_csvs(filepaths):
+    modifieds_all = []
+    error_file_msgs_all = []
+    returns = []
+    for f, filepath in enumerate(filepaths):
+        # does not modify, just extracts
+        filename, _ = os.path.splitext(filepath)
+        modifieds, error_file_msgs, table_texts = find_md_tables_and([filepath], md.table_pivot, replace=False, extract=True)
+        modifieds_all.extend(modifieds)
+        error_file_msgs_all.extend(error_file_msgs)
+        returns.extend(table_texts)
+        for t, table_text in enumerate(table_texts):
+            if len(table_texts) == 1:
+                new_filepath = f'{filename}.csv'
+            else:
+                new_filepath = f'{filename}-tbl{t:02d}.csv'
+            csv_text = md.table_to_csv(table_text, delimiter=',')
+            write_text_file(new_filepath, csv_text)
+    return modifieds_all, error_file_msgs_all
 
 
 KNOWN_FUNCS = {
     md_table_pretty: r'.*\.md$',
     md_table_pivot: r'.*\.md$',
+    md_tables_to_csvs: r'.*\.md$',
 }
 ERROR_PRINTED = {}  # type: Dict[str, str]
 FILEPATHS_MODIFIED = {}  # type: Dict[str, float]
