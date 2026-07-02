@@ -15,6 +15,7 @@ Examples:
 
 Updates:
     2026-07-02 12:54 - tools.doc_watch - added md_tables_to_csvs
+                       tools.doc_watch - csvs are now sent to a /csvs directory
     2026-06-24 11:25 - tools.doc_watch - NOTE: markdown-processing a little janky
     2026-06-24 11:10 - tools.doc_watch - added md_table_pivot
     2026-06-23 22:09 - tools.doc_watch - added dirs and files modes, have to rejigger a few projects but thats fine
@@ -47,7 +48,7 @@ import enum
 from chriscarl.core.constants import TEMP_DIRPATH
 from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
-from chriscarl.core.lib.stdlib.os import abspath, walk_regex, relpath  # make_dirpath,
+from chriscarl.core.lib.stdlib.os import abspath, walk_regex, relpath, make_dirpath, dirname_filename_ext
 from chriscarl.core.lib.stdlib.io import read_text_file, write_text_file
 from chriscarl.core.lib.stdlib.hashlib import md5
 from chriscarl.core.functors.parse import markdown as md
@@ -234,16 +235,18 @@ def md_tables_to_csvs(filepaths):
     returns = []
     for f, filepath in enumerate(filepaths):
         # does not modify, just extracts
-        filename, _ = os.path.splitext(filepath)
+        dirname, filename, _ = dirname_filename_ext(filepath)
+        new_dirpath = f'{dirname}/csvs'
+        make_dirpath(new_dirpath)
         modifieds, error_file_msgs, table_texts = find_md_tables_and([filepath], md.table_pivot, replace=False, extract=True)
         modifieds_all.extend(modifieds)
         error_file_msgs_all.extend(error_file_msgs)
         returns.extend(table_texts)
         for t, table_text in enumerate(table_texts):
             if len(table_texts) == 1:
-                new_filepath = f'{filename}.csv'
+                new_filepath = f'{new_dirpath}/{filename}.csv'
             else:
-                new_filepath = f'{filename}-tbl{t:02d}.csv'
+                new_filepath = f'{new_dirpath}/{filename}-tbl{t:02d}.csv'
             csv_text = md.table_to_csv(table_text, delimiter=',')
             write_text_file(new_filepath, csv_text)
     return modifieds_all, error_file_msgs_all
