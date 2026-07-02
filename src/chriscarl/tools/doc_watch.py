@@ -208,7 +208,6 @@ def find_md_tables_and(filepaths, func, replace=True, extract=False):
 
                 markdown = f'{markdown[:start]}{replacement}\n\n{markdown[end:]}'
             if extract:
-                print(f'|||||\n{table}\n|||||')
                 returns.insert(0, table)
 
         markdown = markdown[4:-5]  # NOTE: markdown-processing a little janky
