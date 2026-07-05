@@ -42,6 +42,12 @@ md2pdf
         pandoc guard find unicode first and deal with it
 
     bugs
+        does not handle $200 very well. (no follow up dollar...)
+
+        `200 * wood + 350 * glass` is treated as an italicized
+
+        Needs support for "\$" in raw markdown
+
         support list in yaml geometry:
             - "margin=0.25in"
             # - landscape

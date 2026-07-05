@@ -634,7 +634,7 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template):
         header_doublespaced = False  # hard low
     header_date = headers.get('date', datetime.datetime.now().strftime('%B %d, %Y'))
     default_margin = 'margin=1in'
-    header_geometry = headers.get('geometry', 'margin=1.5in' if template in ['math'] else default_margin)
+    header_geometry = headers.get('geometry', ['margin=1.5in'] if template in ['math'] else default_margin)
     header_course = headers.get('course', '')
     header_abstract = headers.get('abstract', '')
     header_keywords_lst = [ele.strip() for ele in headers.get('keywords', '').split(',')]
@@ -692,9 +692,11 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template):
 
     if template in ['chicago', 'math']:
         render_dict['<TITLE>'] = f'\\textbf{{{header_title}}}'
+        # TODO: maybe check if the bibliography is filled here, params dont work for this atm
         render_dict['<ADDBIBRESOURCE>'] = f'\\addbibresource{{{bibliography_filepath}}}' if bibliography_filepath else ''
     elif template == 'ieee':
         render_dict['<TITLE>'] = header_title
+        # TODO: maybe check if the bibliography is filled here, params dont work for this atm
         render_dict['<BIBLIOGRAPHY>'] = f'\\bibliography{{{bibliography_filepath}}}' if bibliography_filepath else ''
         # render_dict['<DOUBLESPACING>'] = ''
     else:
@@ -703,7 +705,7 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template):
     render_dict['<AUTHORS>'] = header_author_texts
     render_dict['<COURSE>'] = header_course
     render_dict['<DATE>'] = header_date
-    render_dict['<GEOMETRY>'] = header_geometry
+    render_dict['<GEOMETRY>'] = '\n'.join(rf'\geometry{{{ele}}}' for ele in header_geometry)
     render_dict['<TABLEOFCONTENTS>'] = f'\\clearpage\n\\tableofcontents' if header_toc else ''
     render_dict['<DOUBLESPACING>'] = f'\\usepackage{{setspace}}\n\\doublespacing' if header_doublespaced else ''
 

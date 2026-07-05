@@ -25,6 +25,7 @@ import sys
 import logging
 import subprocess
 import tempfile
+import time
 
 # third party imports
 
@@ -96,6 +97,7 @@ def run_pdflatex(md_filename, output_dirpath, template):
             LOGGER.error('%d / %d - %s, TIMEOUT %0.2f sec!\n%s', c + 1, len(cmds), subprocess.list2cmdline(cmd), timeout, read_text_file(stdout))
             sys.exit(2)
         finally:
+            time.sleep(0.1)
             os.remove(stdout)
 
     # from chriscarl.core.lib.stdlib.os import abspath

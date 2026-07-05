@@ -242,6 +242,10 @@ def markdown_to_latex(
     if debug:
         LOGGER.debug('headers: %s', pprint.pformat(headers, indent=2, width=160))
         LOGGER.debug('renders: %s', pprint.pformat(renders, indent=2, width=160))
+    # TODO: maybe check if the bibliography is filled here, params dont work for this atm
+    if not read_text_file(bibliography_output_filepath):
+        renders['<ADDBIBRESOURCE>'] = ''
+        renders['<BIBLIOGRAPHY>'] = ''
     log_error_warnings(phase, errors, warnings)
 
     # render
