@@ -10,6 +10,7 @@ tools.shed.tex2pdf is functions that takes LaTeX and converts them to PDF
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-08-19 - tools.shed.tex2pdf - amazing what some distance will do to your understanding of your own codebase. added 2 passes of pdf2latex to deal with ??
     2026-04-03 - tools.shed.tex2pdf - if no bibliography contents, dont bother rendering...
     2026-02-06 - tools.shed.tex2pdf - initial commit
 
@@ -67,6 +68,7 @@ def run_pdflatex(md_filename, output_dirpath, template):
         LOGGER.info('no bibliographical content detected, skipping the 4x commands')
         cmds = [
             ['pdflatex', md_filename],
+            ['pdflatex', md_filename],  # to catch ?? with figures and such
         ]
     else:
         cmds = [
