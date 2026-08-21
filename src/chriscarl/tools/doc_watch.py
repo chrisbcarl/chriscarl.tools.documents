@@ -14,6 +14,7 @@ Examples:
     $ doc-watch files   table.md    --md-tables-to-csvs  # leaves behind csvs for each md table
 
 Updates:
+    2026-08-21 09:23 - tools.doc_watch - added resiliance to file deletion, addition, and by side effect, rename
     2026-07-02 12:54 - tools.doc_watch - added md_tables_to_csvs
                        tools.doc_watch - csvs are now sent to a /csvs directory
     2026-06-24 11:25 - tools.doc_watch - NOTE: markdown-processing a little janky
@@ -291,7 +292,14 @@ def process_files(filepaths, used_funcs, cwd=os.getcwd()):
                     all_errors.append(f'{func.__name__!r}: "{rel}" | {msg}')
         actually_modified = actually_modified.union(successes)
 
-    FILEPATHS_MODIFIED.update({filepath: os.path.getmtime(filepath) for filepath in actually_modified})
+    update = {}
+    for filepath in actually_modified:
+        try:
+            update[filepath] = os.path.getmtime(filepath)
+        except FileNotFoundError:
+            LOGGER.warning('previously scanned file "%s" was deleted!', filepath)
+            continue
+    FILEPATHS_MODIFIED.update(update)
     return all_successes, all_errors
 
 
@@ -316,17 +324,21 @@ def main():
 
     # scan for files
     LOGGER.debug('getting mtimes')
+    def scan_dirs():  # for re-use later
+        for dirpath in args.dirpaths:
+            for key in used_patterns:
+                for filepath in walk_regex(dirpath, key, ignore=args.exclude, relpath=False):
+                    if filepath not in FILEPATHS_MODIFIED:
+                        LOGGER.debug('adding file %d - "%s"', filepath)
+                        FILEPATHS_MODIFIED[filepath] = os.path.getmtime(filepath)
+
     if args.mode == Modes.files:
         for filepath in args.filepaths:
             if not any(regex.search(filepath) for regex in used_regexes):
                 raise RuntimeError(f'passed file {filepath!r} does not match any known')
             FILEPATHS_MODIFIED[filepath] = os.path.getmtime(filepath)
-
     elif args.mode == Modes.dirs:
-        for dirpath in args.dirpaths:
-            for key in used_patterns:
-                for filepath in walk_regex(dirpath, key, ignore=args.exclude, relpath=False):
-                    FILEPATHS_MODIFIED[filepath] = os.path.getmtime(filepath)
+        scan_dirs()
 
     LOGGER.debug('FILEPATHS_MODIFIED: %s', FILEPATHS_MODIFIED)
 
@@ -339,8 +351,15 @@ def main():
         elif args.mode == Modes.dirs:
             while True:
                 modified_since_last = []
-                for filepath in FILEPATHS_MODIFIED:
-                    modified = os.path.getmtime(filepath)
+                filepaths = list(FILEPATHS_MODIFIED)  # since this can get modified during runtime
+                for filepath in filepaths:
+                    try:
+                        modified = os.path.getmtime(filepath)
+                    except FileNotFoundError:
+                        LOGGER.warning('previously scanned file "%s" was deleted!', filepath)
+                        del FILEPATHS_MODIFIED[filepath]
+                        continue
+
                     if (filepath not in FILEPATHS_MODIFIED  # new file created
                         or modified > FILEPATHS_MODIFIED[filepath]  # modified more recently
                         ):
@@ -348,7 +367,8 @@ def main():
                 if modified_since_last:
                     LOGGER.debug('FILEPATHS_MODIFIED: %s', FILEPATHS_MODIFIED)
                     process_files(modified_since_last, used_funcs, cwd=cwd)
-                time.sleep(0.1)
+                time.sleep(0.33)
+                scan_dirs()
 
     except KeyboardInterrupt:
         LOGGER.info('ctrl+c detected')
