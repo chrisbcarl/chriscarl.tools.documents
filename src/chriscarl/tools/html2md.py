@@ -9,6 +9,7 @@ Description:
 tools.html2md is a tool which really just wraps markdownify and its CLI script.
 
 Updates:
+    2026-08-30 - tools.html2md - html2md supports multiple filepaths
     2026-01-31 - tools.html2md - initial commit
 '''
 
@@ -29,6 +30,7 @@ from chriscarl.core.lib.stdlib.logging import NAME_TO_LEVEL, configure_ez
 from chriscarl.core.lib.stdlib.argparse import ArgparseNiceFormat
 from chriscarl.core.lib.stdlib.os import abspath, make_dirpath, dirpath
 from chriscarl.core.lib.stdlib.io import write_text_file
+from chriscarl.core.types.str import indent
 from chriscarl.tools.shed import html2md
 
 SCRIPT_RELPATH = 'chriscarl/tools/html2md.py'
@@ -55,33 +57,39 @@ class Arguments:
     '''
     Document this class with any specifics for the process function.
     '''
-    input_filepath: str
-    output_filepath: Optional[str] = None
+    input_filepaths: List[str] = field(default_factory=lambda: [])
+    output_filepaths: List[str] = field(default_factory=lambda: [])
     # non-app
     debug: bool = False
     log_level: str = 'INFO'
     log_filepath: str = DEFAULT_LOG_FILEPATH
+    no_pretty: bool = False
 
     @classmethod
     def argparser(cls):
         # type: () -> ArgumentParser
         parser = ArgumentParser(prog=SCRIPT_NAME, description=__doc__, formatter_class=ArgparseNiceFormat)
         app = parser.add_argument_group('app')
-        app.add_argument('input_filepath', type=str, help='original html to deal with')
-        app.add_argument('--output-filepath', '-o', type=str, help='if provided, store somewhere other than right next door')
+        app.add_argument('input_filepaths', type=str, nargs='*', help='original html to deal with')
+        app.add_argument('--output-filepaths', '-o', type=str, nargs='*', default=[], help='if provided, store somewhere other than right next door')
 
         misc = parser.add_argument_group('misc')
         misc.add_argument('--debug', action='store_true', help='chose to print debug info')
         misc.add_argument('--log-level', type=str, default='INFO', choices=NAME_TO_LEVEL, help='log level?')
         misc.add_argument('--log-filepath', type=str, default=DEFAULT_LOG_FILEPATH, help='log filepath?')
+        misc.add_argument('--no-pretty', action='store_true', help='keep tables un-prettified (rows are variable length)')
         return parser
 
     def process(self):
-        if self.output_filepath:
-            make_dirpath(dirpath(self.output_filepath))
-        else:
-            filename = os.path.splitext(self.input_filepath)[0]
-            self.output_filepath = f'{filename}.md'
+        if not self.output_filepaths:
+            self.output_filepaths = [''] * len(self.input_filepaths)
+            for i, input_filepath in enumerate(self.input_filepaths):
+                filename = os.path.splitext(input_filepath)[0]
+                self.output_filepaths[i] = f'{filename}.md'
+                make_dirpath(dirpath(self.output_filepaths[i]))
+        elif len(self.input_filepaths) != len(self.output_filepaths):
+            raise RuntimeError(f'Amount of --output-filepaths are provided does not match --input-filepaths! Must provide 0 output filepaths or ALL output filepaths.')
+
         if self.debug:
             self.log_level = 'DEBUG'
         configure_ez(level=self.log_level, filepath=self.log_filepath)
@@ -105,11 +113,14 @@ def main():
 
     args = Arguments.parse(parser=parser)
 
-    markdown = html2md.html_to_markdown(args.input_filepath)
-    print(markdown)
-    if args.output_filepath:
-        write_text_file(args.output_filepath, markdown)
-        LOGGER.info('wrote to "%s"', args.output_filepath)
+    for _, tpl in enumerate(zip(args.input_filepaths, args.output_filepaths)):
+        # NOTE: may want to do progress, not sure.
+        input_filepath, output_filepath = tpl
+        markdown = html2md.html_to_markdown(input_filepath, pretty=not args.no_pretty)
+        LOGGER.info('reading from "%s"', input_filepath)
+        print(indent(markdown))
+        write_text_file(output_filepath, markdown)
+        LOGGER.info('wrote to "%s"', output_filepath)
 
     return 0
 

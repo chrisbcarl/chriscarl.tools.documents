@@ -27,6 +27,7 @@ import markdownify
 # project imports
 from chriscarl.core.lib.stdlib.io import read_text_file
 from chriscarl.core.lib.stdlib.os import is_file
+from chriscarl.core.functors.parse.markdown import table_prettify
 
 SCRIPT_RELPATH = 'chriscarl/tools/shed/html2md.py'
 if not hasattr(sys, '_MEIPASS'):
@@ -40,8 +41,8 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 
-def html_to_markdown(html_or_str):
-    # type: (str) -> str
+def html_to_markdown(html_or_str, pretty=True):
+    # type: (str, bool) -> str
     if is_file(html_or_str):
         html_or_str = read_text_file(html_or_str)
 
@@ -53,4 +54,7 @@ def html_to_markdown(html_or_str):
         # convert=['b', 'strong', 'em', 'a'],  # convert is a LIMITER option
     )
     text = re.sub(r'\n{2,}', '\n', text).strip()
+    # BUG: table_prettify doesnt work due to improper table detection...
+    # if pretty:
+    #     text = table_prettify(text)
     return text

@@ -51,7 +51,7 @@ from chriscarl.core.functors.parse.str import unicode_replace
 from chriscarl.core.functors.parse import latex, bibtex, markdown
 from chriscarl.files import manifest_documents as mand
 from chriscarl.tools import md2bibtex
-from chriscarl.core.functors.parse.markdown import MarkdownDoclet
+from chriscarl.core.functors.parse.markdown import MarkdownDoclet, REGEX_HTML_COMMENT
 
 SCRIPT_RELPATH = 'chriscarl/tools/shed/md2latex.py'
 if not hasattr(sys, '_MEIPASS'):
@@ -391,6 +391,10 @@ def markdown_refs_to_latex(content, original_md_content, labels, errors, templat
         if mo2:
             citation_mo = mo2
         else:
+            # TODO: comments are being discovered as citations??? wtf.
+            # if REGEX_HTML_COMMENT.match(citation):
+            #     continue
+
             mo3 = REGEX_CITATION_FULL.match(citation)
             if mo3:
                 citation_mo = mo3

@@ -26,6 +26,7 @@ Updates:
     2026-02-15 20:45 - tools.doc_watch - started
 
 TODO:
+    - files via glob...
     - BUG: finding tables EXACTLY still isn't working...
     - the service autoload or something?
     - deal with files that arent matcing the regex?
