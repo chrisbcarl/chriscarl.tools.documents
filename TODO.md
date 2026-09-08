@@ -42,8 +42,16 @@ md2pdf
         pandoc guard find unicode first and deal with it
 
     bugs
+        table
+            if you have underlines inside, it breaks, causes missing $
+            if you have literals inside, the literals arent translated
+
+        list
+            if you have a literal inside, its not translated, also suffers from the underscore problem
+
         does not handle inline comments well. Thinks of them as citations???
 
+        do not use backspace in literal paths...
 
         does not handle $200 very well. (no follow up dollar...)
 
