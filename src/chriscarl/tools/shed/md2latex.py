@@ -45,6 +45,7 @@ from chriscarl.core.lib.stdlib.os import is_file, dirpath
 from chriscarl.core.lib.stdlib.subprocess import which
 from chriscarl.core.lib.stdlib.io import read_text_file, write_text_file
 from chriscarl.core.lib.stdlib.urllib import download
+from chriscarl.core.lib.stdlib.datetime import NOW
 from chriscarl.core.lib.third.spellchecker import spellcheck
 from chriscarl.core.types.str import indent, dedent, find_lineno_index
 from chriscarl.core.functors.parse.str import unicode_replace
@@ -636,7 +637,8 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template):
     header_doublespaced = headers.get('doublespaced', False)
     if template in ['math']:
         header_doublespaced = False  # hard low
-    header_date = headers.get('date', datetime.datetime.now().strftime('%B %d, %Y'))
+    date = headers.get('date', NOW)
+    header_date = date.strftime('%B %d, %Y')
     default_margin = 'margin=1in'
     header_geometry = headers.get('geometry', ['margin=1.5in'] if template in ['math'] else default_margin)
     header_course = headers.get('course', '')
