@@ -10,6 +10,7 @@ core.lib.third.spellchecker is thin wrappers around the pyspellchecker module
 core.lib are modules that contain code that is about (but does not modify) the library. somewhat referential to core.functor and core.types.
 
 Updates:
+    2026-10-12 - core.lib.third.spellchecker - added prefixes to ignore and inventions
     2026-02-01 - core.lib.third.spellchecker - FIX: wasnt auto-loading the dictionary
     2026-01-25 - core.lib.third.spellchecker - initial commit
 '''
@@ -42,9 +43,11 @@ LOGGER.addHandler(logging.NullHandler())
 
 NON_WORDS = set()
 DICTIONARY = set()
+INVENTIONS = set()
 ACRONYMS = set()
 NAMES = set()
 DICTIONARY_LOW = set()
+IGNORE_PREFIX = set()
 
 
 def load_dictionary():
@@ -53,8 +56,10 @@ def load_dictionary():
         return
     NON_WORDS.update(set(ele for ele in read_text_file(manifest_documents.FILEPATH_NON_WORDS).splitlines() if ele and not ele.startswith('#')))
     DICTIONARY.update(set(ele for ele in read_text_file(manifest_documents.FILEPATH_DICTIONARY).splitlines() if ele and not ele.startswith('#')))
+    INVENTIONS.update(set(ele for ele in read_text_file(manifest_documents.FILEPATH_INVENTIONS).splitlines() if ele and not ele.startswith('#')))
     ACRONYMS.update(set(ele for ele in read_text_file(manifest_documents.FILEPATH_ACRONYMS).splitlines() if ele and not ele.startswith('#')))
     NAMES.update(set(ele for ele in read_text_file(manifest_documents.FILEPATH_NAMES).splitlines() if ele and not ele.startswith('#')))
+    IGNORE_PREFIX.update(set(ele for ele in read_text_file(manifest_documents.FILEPATH_IGNORE_PREFIX).splitlines() if ele and not ele.startswith('#')))
     for acronym in list(ACRONYMS):
         if acronym[-1] == 's':
             ACRONYMS.add(f"{acronym}'")
@@ -66,7 +71,7 @@ def load_dictionary():
             NAMES.add(f"{name}'")
         else:
             NAMES.add(f"{name}'s")
-    DICTIONARY_LOW.update(set(ele.lower() for ele in DICTIONARY.union(NAMES).union(ACRONYMS)))
+    DICTIONARY_LOW.update(set(ele.lower() for ele in DICTIONARY.union(INVENTIONS).union(NAMES).union(ACRONYMS)))
 
 
 def clean_line(line):
@@ -81,6 +86,7 @@ def clean_line(line):
     text = re.sub(r'(\s+)-\s+', r'\1', text)  # asdf - asdf
 
     return text
+
 
 T_SPELLCHECK_ERROR = Dict[str, List[Tuple[int, str, str]]]
 T_SPELLCHECK_WARN = Dict[str, List[Tuple[int, str]]]
@@ -151,6 +157,8 @@ def spellcheck(content):
                     error_words[token] = []
                 error_words[token].append((lineno, line, correctwords))
             else:
+                if any(token.startswith(prefix) for prefix in IGNORE_PREFIX):
+                    continue
                 if token not in warning_words:
                     warning_words[token] = []
                 warning_words[token].append((lineno, line))

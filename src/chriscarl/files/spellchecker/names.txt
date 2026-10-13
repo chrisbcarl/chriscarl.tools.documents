@@ -1,8 +1,12 @@
+# names
 Chatterjee
 Bentham
 Tridha
 Arendt
 Du Bois
+Alajmi
+
+# companies
 OpenAI
 McKinsey
 

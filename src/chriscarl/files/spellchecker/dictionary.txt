@@ -68,6 +68,7 @@ overfitting
 winograd
 backtick
 df
+dataset
 
 # slang
 Influencers
@@ -80,7 +81,7 @@ incelibate
 manosphere
 alt-right
 
-# figure out some way to conjugate
+# TODO: figure out some way to conjugate
 grifter
 grifters
 de-alienating

@@ -10,6 +10,7 @@ files.manifest_documents is literally what it says on the tin
 files are modules that elevate files so they can be used in python, either registering the path name or actually interacting with them like data cabinets.
 
 Updates:
+    2026-10-12 - files.manifest_documents - added prefixes to ignore and inventions
     2026-02-23 - files.manifest_documents - added ipynb files
     2026-01-29 - files.manifest_documents - md2latex
     2026-01-25 - files.manifest_documents - initial commit
@@ -56,7 +57,9 @@ FILEPATH_MD2LATEX_CHICAGO_TEMPLATE = os.path.join(DIRPATH_MD2LATEX, 'chicago.tex
 DIRPATH_SPELLCHECKER = os.path.join(SCRIPT_DIRPATH, './spellchecker')
 FILEPATH_ACRONYMS = os.path.join(DIRPATH_SPELLCHECKER, 'acronyms.txt')
 FILEPATH_DICTIONARY = os.path.join(DIRPATH_SPELLCHECKER, 'dictionary.txt')
+FILEPATH_INVENTIONS = os.path.join(DIRPATH_SPELLCHECKER, 'inventions.txt')
 FILEPATH_NAMES = os.path.join(DIRPATH_SPELLCHECKER, 'names.txt')
 FILEPATH_NON_WORDS = os.path.join(DIRPATH_SPELLCHECKER, 'non-words.txt')
+FILEPATH_IGNORE_PREFIX = os.path.join(DIRPATH_SPELLCHECKER, 'ignore-prefix.txt')
 
 # ###
