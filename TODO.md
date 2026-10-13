@@ -42,6 +42,8 @@ md2pdf
         pandoc guard find unicode first and deal with it
 
     bugs
+        - confirm valid bibtex dictionaries like commas and stuff missing in the middle
+
         table
             if you have underlines inside, it breaks, causes missing $
             if you have literals inside, the literals arent translated
