@@ -21,6 +21,7 @@ Examples:
         -ss  # skip spellcheck
 
 Updates:
+    2026-10-20 - tools.md2latex - FEATURE: file-import
     2026-02-20 - tools.md2latex - supporting markdown specific function movement
     2026-02-15 - tools.md2latex - added --auto-label-caption
     2026-02-10 - tools.md2latex - FIX: template was not being passed along from md2latex to md2pdf
@@ -39,6 +40,7 @@ import os
 import sys
 import logging
 from typing import List, Generator, Optional, Tuple, Dict
+import re
 from dataclasses import dataclass, field, fields
 from argparse import ArgumentParser
 import pprint
@@ -247,6 +249,13 @@ def markdown_to_latex(
         renders['<ADDBIBRESOURCE>'] = ''
         renders['<BIBLIOGRAPHY>'] = ''
     log_error_warnings(phase, errors, warnings)
+
+    # FEATURE: file-import
+    phase = 'file-import'
+    LOGGER.info('running %r', phase)
+    body, errors, warnings = md2latex.file_import(md_filepath, renders['<BODY>'])
+    log_error_warnings(phase, errors, warnings)
+    renders['<BODY>'] = body
 
     # render
     phase, errors, warnings = 'doclets+latex2texfile', [], []

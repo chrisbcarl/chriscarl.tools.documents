@@ -3,8 +3,9 @@ Since I enrolled in SJSU in 2025F as an MS CMPE student, I have found need for l
 
 
 # Features
-|version|author|deployed|created|feature-name|description|
-|---    |---   |---     |---    |---         |---        |
+|version|author|deployed|created|feature-name   |description|
+|---    |---   |---     |---    |---            |---        |
+|0.0.0       |chrisbcarl@outlook.com      |2026-10-20        |2026-10-20       |file-import |you can import files by putting `[file](filepath.txt)`|
 
 
 # Acknowledgements

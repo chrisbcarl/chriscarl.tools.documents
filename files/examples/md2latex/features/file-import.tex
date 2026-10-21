@@ -1,0 +1,140 @@
+% Based on: https://www.overleaf.com/latex/templates/turabian-formatted-thesis-slash-dissertation/qkyvdqrsgmnf
+%
+
+\documentclass[12pt]{article}
+% \documentclass{report}
+% \documentclass{book}
+
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+
+
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes, ellipsis}
+\usepackage{graphicx}
+\usepackage{tabularx,booktabs}
+% use l for left aligned columns
+% defined centered version of "X" column type:
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+% defined right version of "X" column type: (copilot ai-gen)
+\newcolumntype{R}{>{\raggedleft\arraybackslash}X}
+\usepackage{amsmath,amssymb,amsfonts}
+% https://tex.stackexchange.com/a/116572
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+% frame=single,
+  breaklines=true,
+% postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}, % makes literal red arrrow newlines...
+}
+
+
+% \usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
+% \usepackage{url}
+
+% https://tex.stackexchange.com/a/305413
+\usepackage{lipsum} % filler text
+
+% \usepackage[pass, letterpaper]{geometry}
+\usepackage{geometry}
+\geometry{margin=1in}
+% \geometry{legalpaper, landscape, margin=2in}
+
+
+\newcommand {\coursetitle }[1]{
+    \begin{center}
+    {\normalsize {#1}} % \normalsize \textbf {#1}
+    \end{center}
+}
+\def\BibTeX{
+    {\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}
+}
+
+
+\usepackage{biblatex-chicago}
+% https://tex.stackexchange.com/a/169793
+% combine with {hyperref} package + re.sub(r'_', '\\_', bib_content) into some temporary fixed .bib file instead
+\DeclareSourcemap{
+    \maps[datatype=bibtex]{
+        \map{
+            \step[fieldsource=url,
+            match=\regexp{\\_},
+            replace=\regexp{_}]
+        }
+    }
+}
+% \addbibresource{references.bib}
+
+
+
+% \usepackage{setspace}
+% \doublespacing
+
+
+
+\usepackage[affil-it]{authblk}
+
+
+\title{Untitled}
+\date{October 20, 2026} % \today
+% \author{John C. Neu
+% \thanks{Electronic address: \texttt{neu@math.berkeley.edu}}
+% }
+% \affil{Department of Mathematics, University of California, Berkeley}
+
+
+
+\begin{document}
+
+
+\maketitle
+\coursetitle{}
+
+
+% \clearpage
+% \tableofcontents
+
+
+
+\clearpage
+
+
+
+
+\section{Title}\label{Title}
+
+Observe Listing ~\ref{code-file}, which was imported from a relative filepath.
+
+\begin{lstlisting}[language=Python, caption={Listing imported from file on disc}, label={code-file}, showstringspaces=false]
+def func():
+    print('hello world')
+
+
+# Note how if you have a really really long comment or something that definitely goes over the column limit, it will be re-indented in an attempt to save itself.
+func()
+
+\end{lstlisting}
+
+
+
+
+% \begin{figure}[htbp]
+% \centerline{\includegraphics[width=\linewidth]{../Layout-dimensions.png}}
+% \caption{Example of a figure caption.}
+% \label{fig:whatever}
+% \end{figure}
+
+
+\clearpage
+\printbibliography
+
+
+
+
+
+\end{document}

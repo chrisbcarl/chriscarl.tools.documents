@@ -10,6 +10,7 @@ tools.shed.md2latex is individual funcs that support the larger tool that COULD 
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-10-20 - tools.shed.md2latex - FEATURE: file-import
     2026-03-02 - tools.shed.md2latex - FIX: unsupported languages default to C++ lstlisting
     2026-02-20 - tools.shed.md2latex - moved out many regex and functions to the main library markdown parser.
     2026-02-15 - tools.shed.md2latex - added --auto-label-caption
@@ -50,9 +51,10 @@ from chriscarl.core.lib.third.spellchecker import spellcheck
 from chriscarl.core.types.str import indent, dedent, find_lineno_index
 from chriscarl.core.functors.parse.str import unicode_replace
 from chriscarl.core.functors.parse import latex, bibtex, markdown
+from chriscarl.core.functors.parse.markdown import MarkdownDoclet, REGEX_HTML_COMMENT
+from chriscarl.core.types.str import find_lineno_index
 from chriscarl.files import manifest_documents as mand
 from chriscarl.tools import md2bibtex
-from chriscarl.core.functors.parse.markdown import MarkdownDoclet, REGEX_HTML_COMMENT
 
 SCRIPT_RELPATH = 'chriscarl/tools/shed/md2latex.py'
 if not hasattr(sys, '_MEIPASS'):
@@ -74,6 +76,7 @@ TEMPLATES = {
     'math': mand.FILEPATH_MD2LATEX_CHICAGO_TEMPLATE,  # chicago with some hardcoding
 }
 DEFAULT_TEMPLATE = list(TEMPLATES)[0]
+MD2LATEX_FILE_INCLUDE = re.compile(r'\[file\]\((?P<filepath>.*?)\)')
 
 
 def assert_executables_exist():
@@ -280,6 +283,27 @@ def delete_latex_work_files(dirpath, filename, extra=None):
             os.remove(clean_me_filepath)
     for filepath in extra:
         os.remove(filepath)
+
+
+def file_import(md_filepath, md_content):
+    # type: (str, str) -> tuple[str, list[str], list[str]]
+    # FEATURE: file-import
+    original_md_content = read_text_file(md_filepath)
+    errors, warnings = [], []
+    md_dirpath = dirpath(md_filepath)
+    for mo in reversed(list(MD2LATEX_FILE_INCLUDE.finditer(md_content))):
+        start, end = mo.start(), mo.end()
+        groupdict = mo.groupdict()
+        relpath = groupdict['filepath']
+        filepath = os.path.abspath(os.path.join(md_dirpath, relpath))
+        if not os.path.isfile(filepath):
+            lineno = list(find_lineno_index(md_content[start:end].strip(), original_md_content))[0][0]
+            errors.append(f'file-import: "{relpath}" does not exist at line {lineno}!')
+            continue
+        LOGGER.debug('file-import "%s"', filepath)
+        import_content = read_text_file(filepath)
+        md_content = f'{md_content[0:start]}{import_content}{md_content[end:]}'
+    return md_content, errors, warnings
 
 
 def bibliographies_to_bibtex(bibliography_filepaths, bibliography_output_filepath):
@@ -639,7 +663,7 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template):
         header_doublespaced = False  # hard low
     date = headers.get('date', NOW)
     header_date = date.strftime('%B %d, %Y')
-    default_margin = 'margin=1in'
+    default_margin = ['margin=1in']
     header_geometry = headers.get('geometry', ['margin=1.5in'] if template in ['math'] else default_margin)
     header_course = headers.get('course', '')
     header_abstract = headers.get('abstract', '')
@@ -724,7 +748,7 @@ def markdown_header_to_render_dict(text, bibliography_filepath, template):
 def render_tex_file(headers, renders, tex_output_filepath):
     # type: (Dict[str, str], Dict[str, str], str) -> Tuple[List[str], List[str]]
     errors, warnings = [], []
-    template_filepath = TEMPLATES[headers['template']]
+    template_filepath = TEMPLATES[headers.get('template', 'default')]
 
     with open(template_filepath, 'r', encoding='utf-8') as r:
         template_content = r.read()
