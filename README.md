@@ -2,6 +2,14 @@
 Since I enrolled in SJSU in 2025F as an MS CMPE student, I have found need for lots of tools like C/C++ compilation and test, Markdown to LaTeX, and others. This project will serve to bundle all of those.
 
 
+# Usage
+```bash
+doc-watch dirs    ./          --md-table-pretty --md-auto-latex --exclude known-file.md
+doc-watch files   table.md    --md-table-pretty --md-auto-latex
+doc-watch files   table.md    --md-tables-to-csvs  # leaves behind csvs for each md table
+doc-watch files   md-pivot.md --md-table-pivot
+```
+
 # Features
 |version|author|deployed|created|feature-name   |description|
 |---    |---   |---     |---    |---            |---        |

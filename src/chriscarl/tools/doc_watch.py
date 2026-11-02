@@ -12,6 +12,7 @@ Examples:
     $ doc-watch dirs    ./          --md-table-pretty --md-auto-latex --exclude known-file.md
     $ doc-watch files   table.md    --md-table-pretty --md-auto-latex
     $ doc-watch files   table.md    --md-tables-to-csvs  # leaves behind csvs for each md table
+    $ doc-watch files   md-pivot.md --md-table-pivot
 
 Updates:
     2026-08-21 09:23 - tools.doc_watch - added resiliance to file deletion, addition, and by side effect, rename
@@ -325,6 +326,7 @@ def main():
 
     # scan for files
     LOGGER.debug('getting mtimes')
+
     def scan_dirs():  # for re-use later
         for dirpath in args.dirpaths:
             for key in used_patterns:
