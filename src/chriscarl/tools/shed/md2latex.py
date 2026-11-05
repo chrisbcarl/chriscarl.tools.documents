@@ -10,6 +10,7 @@ tools.shed.md2latex is individual funcs that support the larger tool that COULD 
 tool are modules that define usually cli tools or mini applets that I or other people may find interesting or useful.
 
 Updates:
+    2026-11-04 - tools.shed.md2latex - FIX: baffling-html
     2026-10-20 - tools.shed.md2latex - FEATURE: file-import
     2026-03-02 - tools.shed.md2latex - FIX: unsupported languages default to C++ lstlisting
     2026-02-20 - tools.shed.md2latex - moved out many regex and functions to the main library markdown parser.
@@ -95,6 +96,7 @@ REGEX_CITATION_FULL = re.compile(
     # [du-bois, Chapter 4, s08]deleting previous work files
     r'<(?P<ref>[A-Za-z0-9\-_\.]+)(,\s+)(?P<chapter>[A-Za-z0-9\-_\. \:]+)(,\s+)?(?P<section_or_pages_or_timestamp>[sSpP])?(?P<pages_or_timestamp>[-:\d]+)?>'
 )
+REGEX_HTML_TERMINATOR = re.compile(r'<\/[A-Za-z0-9]+>')
 # TODO: remove
 # REGEX_CITATION_INTERDOC_EQ = re.compile(r'(?P<pref>Eq\s*)?<eq-(?P<ref>[A-Za-z0-9\-_\.]+)>')
 # REGEX_CITATION_INTERDOC_TBL = re.compile(r'(?P<pref>Table\s*)?<tbl-(?P<ref>[A-Za-z0-9\-_\.]+)>')
@@ -123,6 +125,50 @@ REGEX_MARKDOWN_EMPTY_LITERAL = re.compile(r'```\s*```', flags=re.MULTILINE)
 
 # BUG: LIST CITATION
 REGEX_HTML_ELEMENT = re.compile(r'<[a-zA-Z-]+\s+(?P<key>(?:(?!href|src)\b)[A-Za-z\d_-]+)\s*=\s*["\'](?P<value>.*?)["\']\s*>')
+# FIX: baffling-html
+SHORT_TAGS = set(
+    [
+        token.split('>')[0] for token in '''
+# gemini3.8flash-m: "list the common html tags that are less than 4 characters long"
+1-Character Tags
+    <a> - Anchor / hyperlink
+    <p> - Paragraph block
+    <b> - Stylistic bold text
+    <i> - Stylistic italic text
+    <u> - Underlined text annotation
+    <s> - Strikethrough / no longer accurate text
+    <q> - Short inline quotation
+2-Character Tags
+    <h1>-<h6> - Section headings (levels 1 through 6)
+    <br> - Line break
+    <hr> - Thematic break / horizontal rule
+    <em> - Emphasized text
+    <ul> - Unordered (bulleted) list
+    <ol> - Ordered (numbered) list
+    <li> - List item
+    <tr> - Table row
+    <td> - Table data cell
+    <th> - Table header cell
+    <dl> - Description list
+    <dt> - Description term
+    <dd> - Description definition/details
+3-Character Tags
+    <div> - Generic content division/container
+    <img> - Embedded image
+    <nav> - Navigation section
+    <pre> - Preformatted text block
+    <sub> - Subscript text
+    <sup> - Superscript text
+    <del> - Deleted / struck-through text
+    <ins> - Inserted text
+    <col> - Table column properties
+    <svg> - Inline vector graphics container
+    <map> - Client-side image map
+    <kbd> - Keyboard input indicator
+    <var> - Variable name representation
+'''.split('<') if token.split('>')[0] and len(token.split('>')[0]) < 3
+    ] + list(f'h{i}' for i in range(2, 6))
+)
 
 
 def get_words_only(text):
@@ -424,6 +470,8 @@ def markdown_refs_to_latex(content, original_md_content, labels, errors, templat
             if mo3:
                 citation_mo = mo3
             else:
+                if REGEX_HTML_TERMINATOR.match(citation):  # FIX: baffling-html
+                    continue
                 try:
                     lineno = list(find_lineno_index(citation, original_md_content))[0][0] + 1
                 except Exception:
@@ -431,6 +479,10 @@ def markdown_refs_to_latex(content, original_md_content, labels, errors, templat
                 raise RuntimeError(f'citation at lineno {lineno} is completely baffling to me: {citation!r}')
         groups = citation_mo.groupdict()
         original_ref = groups.get('ref', '')
+
+        if original_ref.lower() in SHORT_TAGS:  # FIX: baffling-html
+            continue
+
         ref_dict = labels.get(original_ref.lower())
 
         if not ref_dict:

@@ -13,7 +13,8 @@ doc-watch files   md-pivot.md --md-table-pivot
 # Features
 |version|author|deployed|created|feature-name   |description|
 |---    |---   |---     |---    |---            |---        |
-|0.0.0       |chrisbcarl@outlook.com      |2026-10-20        |2026-10-20       |file-import |you can import files by putting `[file](filepath.txt)`|
+|0.0.0       |chrisbcarl@outlook.com      |2026-11-04        |2026-11-04       |FIX: baffling-html|raw html embedded in a table no longer trips up.|
+|0.0.0       |chrisbcarl@outlook.com      |2026-10-20        |2026-10-20       |FEATURE: file-import |you can import files by putting `[file](filepath.txt)`|
 
 
 # Acknowledgements
